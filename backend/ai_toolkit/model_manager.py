@@ -398,97 +398,33 @@ class ModelManager:
         model_type = self.get_current_img_model() if use_img_model else self.get_current_model()
         provider = self.config.get('models', {}).get(model_type, {}).get('provider', '')
         
+        # Validate API key for the selected provider
+        try:
+            if provider == 'openai':
+                api_key = os.getenv('OPENAI_API_KEY')
+                if not api_key:
+                    return f"Error: OpenAI API key not found. Please provide an API key for {provider}."
+            elif provider == 'anthropic':
+                api_key = os.getenv('ANTHROPIC_API_KEY')
+                if not api_key:
+                    return f"Error: Anthropic API key not found. Please provide an API key for {provider}."
+            elif provider == 'google':
+                api_key = os.getenv('GENAI_API_KEY')
+                if not api_key:
+                    return f"Error: Google AI API key not found. Please provide an API key for {provider}."
+        except Exception as e:
+            logger.error(f"API key validation error: {e}")
+            return f"Error validating API keys: {str(e)}"
+        
         # Check for JSON mode
         json_mode = self.config.get('json_mode', False)
         
-        if json_mode:
-            # Prepare JSON template
-            template = self._prepare_json_template(model_type)
-            
-            # If prompt is a string, convert to messages format
-            if isinstance(prompt, str):
-                system_message = model.model_config.get('system_message', '')
-                if provider == 'openai':
-                    # Special formatting for OpenAI models
-                    messages = []
-                    # Add system message if provided
-                    if system_message and model_type != 'o3-mini':
-                        messages.append({"role": "system", "content": system_message})
-                    
-                    # Add user message with proper content type format
-                    messages.append({
-                        "role": "user", 
-                        "content": [{"type": "text", "text": prompt}]
-                    })
-                    
-                    # Add JSON formatting instructions
-                    json_prompt = {
-                        "messages": messages,
-                        "response_format": {"type": "json_object"},
-                        "json_template": template
-                    }
-                else:
-                    # Non-OpenAI models
-                    messages = [
-                        {"role": "system", "content": system_message},
-                        {"role": "user", "content": prompt}
-                    ]
-                    
-                    # Add JSON formatting instructions
-                    json_prompt = {
-                        "messages": messages,
-                        "response_format": {"type": "json_object"},
-                        "json_template": template
-                    }
-                
-                prompt = json_prompt
-            elif isinstance(prompt, dict) and "messages" in prompt and "response_format" not in prompt:
-                # Add JSON formatting to existing dict prompt
-                prompt["response_format"] = {"type": "json_object"}
-                prompt["json_template"] = template
-                
-                # Ensure proper content format for OpenAI models
-                if provider == 'openai':
-                    for i, message in enumerate(prompt["messages"]):
-                        if message.get("role") == "user" and isinstance(message.get("content"), str):
-                            prompt["messages"][i]["content"] = [{"type": "text", "text": message["content"]}]
-        
-        # If prompt is a list of messages (not a string and not a dict with messages)
-        elif isinstance(prompt, list):
-            # Process messages for OpenAI
-            if provider == 'openai':
-                for i, message in enumerate(prompt):
-                    if message.get("role") == "user" and isinstance(message.get("content"), str):
-                        prompt[i]["content"] = [{"type": "text", "text": message["content"]}]
-            
-        # If prompt is a dict with messages
-        elif isinstance(prompt, dict) and "messages" in prompt:
-            # Process messages for OpenAI
-            if provider == 'openai':
-                for i, message in enumerate(prompt["messages"]):
-                    if message.get("role") == "user" and isinstance(message.get("content"), str):
-                        prompt["messages"][i]["content"] = [{"type": "text", "text": message["content"]}]
-        
-        # If prompt is just a string, ensure proper formatting
-        elif isinstance(prompt, str) and provider == 'openai':
-            system_message = model.model_config.get('system_message', '')
-            messages = []
-            
-            # Add system message if provided and not o3-mini
-            if system_message and model_type != 'o3-mini':
-                messages.append({"role": "system", "content": system_message})
-            
-            # Add user message with proper content format
-            messages.append({
-                "role": "user", 
-                "content": [{"type": "text", "text": prompt}]
-            })
-            
-            prompt = {"messages": messages}
+        # Format messages based on provider
+        formatted_prompt = self._format_prompt_for_provider(prompt, provider, model_type, json_mode)
         
         try:
             # Generate content
-            response = model.generate_content(prompt)
+            response = model.generate_content(formatted_prompt)
             
             # Process JSON response if in JSON mode
             if json_mode:
@@ -536,16 +472,77 @@ class ModelManager:
             
         except Exception as e:
             logger.error(f"Error generating content: {e}")
+            error_msg = str(e)
+            
+            # Check for specific API key errors
+            if "API key" in error_msg.lower() or "apikey" in error_msg.lower() or "authentication" in error_msg.lower() or "auth" in error_msg.lower():
+                error_msg = f"API key error for {provider}: {error_msg}. Please check your API key settings."
+            
             if json_mode:
                 return json.dumps({
-                    'error': str(e),
+                    'error': error_msg,
                     'metadata': {
                         'model': model_type,
                         'timestamp': datetime.now().isoformat()
                     }
                 }, ensure_ascii=False, indent=2)
             else:
-                return f"Error generating content: {str(e)}"
+                return f"Error generating content: {error_msg}"
+
+    def _format_prompt_for_provider(self, prompt, provider, model_type, json_mode=False):
+        """Format the prompt based on the provider's requirements"""
+        # If already formatted correctly, return as is
+        if isinstance(prompt, dict) and "messages" in prompt:
+            # For OpenAI, ensure user messages have the right format
+            if provider == 'openai':
+                for i, message in enumerate(prompt["messages"]):
+                    if message.get("role") == "user" and isinstance(message.get("content"), str):
+                        prompt["messages"][i]["content"] = [{"type": "text", "text": message["content"]}]
+            return prompt
+        
+        # If it's a list of messages
+        if isinstance(prompt, list):
+            # For OpenAI, ensure user messages have the right format
+            if provider == 'openai':
+                for i, message in enumerate(prompt):
+                    if message.get("role") == "user" and isinstance(message.get("content"), str):
+                        prompt[i]["content"] = [{"type": "text", "text": message["content"]}]
+            return prompt
+        
+        # If it's a string, convert to proper format
+        if isinstance(prompt, str):
+            system_message = self.current_model.model_config.get('system_message', '')
+            
+            if provider == 'openai':
+                messages = []
+                if system_message:
+                    messages.append({"role": "system", "content": system_message})
+                messages.append({
+                    "role": "user",
+                    "content": [{"type": "text", "text": prompt}]
+                })
+                return {"messages": messages}
+            
+            elif provider == 'anthropic':
+                if system_message:
+                    return {
+                        "messages": [
+                            {"role": "user", "content": prompt}
+                        ],
+                        "system": system_message
+                    }
+                else:
+                    return {
+                        "messages": [
+                            {"role": "user", "content": prompt}
+                        ]
+                    }
+            
+            # For other providers, return as is
+            return prompt
+        
+        # Default case, return unchanged
+        return prompt
     
     def generate_content_with_image(self, prompt: str, image_path: str) -> str:
         """
