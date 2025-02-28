@@ -1,0 +1,219 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useChat } from '../contexts/ChatContext';
+import { useModel } from '../contexts/ModelContext';
+import { useSettings } from '../contexts/SettingsContext';
+import MessageList from '../components/chat/MessageList';
+import MessageInput from '../components/chat/MessageInput';
+import './ChatPage.css';
+
+const SystemMessage = ({ chat, modelConfig, systemPrompts, onUpdateSystemMessage }) => {
+  const [editing, setEditing] = useState(false);
+  const [systemMessage, setSystemMessage] = useState('');
+  const [selectedPromptKey, setSelectedPromptKey] = useState('default_system');
+  
+  useEffect(() => {
+    // Find system message
+    const sysMsg = chat.messages.find(msg => msg.role === 'system');
+    if (sysMsg) {
+      setSystemMessage(sysMsg.content);
+      
+      // Try to determine which prompt key matches this content
+      const promptKey = Object.entries(systemPrompts).find(
+        ([key, content]) => content === sysMsg.content
+      )?.[0] || 'default_system';
+      
+      setSelectedPromptKey(promptKey);
+    } else {
+      setSystemMessage('');
+      setSelectedPromptKey('default_system');
+    }
+  }, [chat, systemPrompts]);
+  
+  const handleSaveSystem = () => {
+    onUpdateSystemMessage(systemMessage);
+    setEditing(false);
+  };
+  
+  const handleSelectPrompt = (e) => {
+    const key = e.target.value;
+    setSelectedPromptKey(key);
+    setSystemMessage(systemPrompts[key] || '');
+  };
+  
+  const supportsSystemPrompt = modelConfig?.supports_system_prompt !== false;
+  
+  if (!supportsSystemPrompt) {
+    return (
+      <div className="system-message-container">
+        <div className="system-message-header">
+          <h3>System Message</h3>
+        </div>
+        <div className="system-message-placeholder">
+          The selected model ({chat.model}) does not support system messages.
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="system-message-container">
+      <div className="system-message-header">
+        <h3>System Message</h3>
+        <button 
+          className="system-message-toggle"
+          onClick={() => setEditing(!editing)}
+        >
+          {editing ? 'Cancel' : 'Edit'}
+        </button>
+      </div>
+      
+      {editing ? (
+        <div className="system-message-content">
+          <div className="model-parameter">
+            <label>Prompt Template:</label>
+            <select value={selectedPromptKey} onChange={handleSelectPrompt}>
+              {Object.keys(systemPrompts).map(key => (
+                <option key={key} value={key}>
+                  {key}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <textarea
+            className="system-message-input"
+            value={systemMessage}
+            onChange={(e) => setSystemMessage(e.target.value)}
+            placeholder="Enter a system message to set the behavior of the AI..."
+          />
+          
+          <div className="system-message-actions">
+            <button 
+              className="secondary-button"
+              onClick={() => setEditing(false)}
+            >
+              Cancel
+            </button>
+            <button 
+              className="primary-button"
+              onClick={handleSaveSystem}
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="system-message-display">
+          {systemMessage || (
+            <span className="system-message-placeholder">
+              No system message set. Click "Edit" to add one.
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ChatPage = () => {
+  const { chatId } = useParams();
+  const navigate = useNavigate();
+  const { 
+    currentChat, 
+    loadChat, 
+    createNewChat, 
+    sendChatMessage,
+    updateSystemMessage,
+    sending 
+  } = useChat();
+  const { modelConfigs } = useModel();
+  const { systemPrompts } = useSettings();
+
+  useEffect(() => {
+    if (chatId) {
+      loadChat(chatId);
+    } else if (!currentChat) {
+      // Create a new chat if no chat is selected
+      createNewChat().then(newChat => {
+        if (newChat) {
+          navigate(`/chat/${newChat.id}`);
+        }
+      });
+    }
+  }, [chatId]);
+
+  const handleSendMessage = async (content) => {
+    if (!chatId) return;
+    
+    await sendChatMessage(chatId, content);
+  };
+  
+  const handleUpdateSystemMessage = async (content) => {
+    if (!chatId) return;
+    
+    await updateSystemMessage(chatId, content);
+  };
+
+  if (!currentChat && chatId) {
+    return (
+      <div className="chat-loading">
+        <p>Loading chat...</p>
+      </div>
+    );
+  }
+
+  if (!currentChat) {
+    return (
+      <div className="no-chat-selected">
+        <p>Select a chat or create a new one to start.</p>
+        <button 
+          className="primary-button"
+          onClick={async () => {
+            const newChat = await createNewChat();
+            if (newChat) {
+              navigate(`/chat/${newChat.id}`);
+            }
+          }}
+        >
+          New Chat
+        </button>
+      </div>
+    );
+  }
+
+  const modelConfig = modelConfigs[currentChat.model];
+
+  return (
+    <div className="chat-page">
+      <div className="chat-container">
+        <div className="chat-header">
+          <h2>{currentChat.title}</h2>
+          <div className="chat-model-info">
+            Model: {currentChat.model}
+          </div>
+        </div>
+        
+        <SystemMessage 
+          chat={currentChat} 
+          modelConfig={modelConfig}
+          systemPrompts={systemPrompts}
+          onUpdateSystemMessage={handleUpdateSystemMessage}
+        />
+        
+        <div className="messages-container">
+          <MessageList 
+            messages={currentChat.messages.filter(msg => msg.role !== 'system')} 
+          />
+        </div>
+        
+        <MessageInput 
+          onSendMessage={handleSendMessage}
+          disabled={sending}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default ChatPage;
