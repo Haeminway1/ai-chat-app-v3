@@ -533,25 +533,81 @@ class GeminiModel(AIModel):
             # Get system message from config
             system_message = self.model_config.get('system_message', '')
             
-            # Prepare content based on prompt type
-            if isinstance(prompt, list):
-                # Use list as is (for multimodal content)
-                contents = prompt
-            else:
+            # Gemini doesn't support message roles like OpenAI and Claude
+            # We need to convert to a format Gemini understands
+            if isinstance(prompt, list) or (isinstance(prompt, dict) and "messages" in prompt):
+                messages = prompt if isinstance(prompt, list) else prompt.get("messages", [])
+                
+                # Convert message array to a single string for Gemini
+                formatted_prompt = ""
+                
                 # Add system message if available
-                full_prompt = f"{system_message}\n\n{prompt}" if system_message and isinstance(prompt, str) else prompt
-                contents = [full_prompt]
-            
-            # Prepare generation config
-            generation_config = {
-                "temperature": self.model_config['temperature'],
-                "top_p": self.model_config.get('top_p', 1),
-                "top_k": self.model_config.get('top_k', 1),
-                "max_output_tokens": self.model_config['max_tokens'],
-            }
-            
-            # Generate content
-            response = self.model.generate_content(contents, generation_config=generation_config)
+                if system_message:
+                    formatted_prompt += f"System: {system_message}\n\n"
+                
+                # Process each message
+                for msg in messages:
+                    role = msg.get("role", "")
+                    content = msg.get("content", "")
+                    
+                    # If content is an array (OpenAI format), extract text
+                    if isinstance(content, list) and len(content) > 0:
+                        if "text" in content[0]:
+                            content = content[0]["text"]
+                    
+                    # Skip empty messages
+                    if not content:
+                        continue
+                        
+                    # Add role prefix
+                    if role == "system":
+                        # System message already handled at beginning
+                        pass
+                    elif role == "user":
+                        formatted_prompt += f"User: {content}\n\n"
+                    elif role == "assistant":
+                        formatted_prompt += f"Assistant: {content}\n\n"
+                    else:
+                        formatted_prompt += f"{role.capitalize()}: {content}\n\n"
+                
+                # Add a final assistant prompt
+                formatted_prompt += "Assistant: "
+                
+                # Prepare generation config
+                generation_config = {
+                    "temperature": self.model_config['temperature'],
+                    "top_p": self.model_config.get('top_p', 1),
+                    "top_k": self.model_config.get('top_k', 1),
+                    "max_output_tokens": self.model_config['max_tokens'],
+                }
+                
+                # Generate content
+                response = self.model.generate_content(formatted_prompt, generation_config=generation_config)
+                
+            elif isinstance(prompt, str):
+                # Add system message if available for string prompts
+                full_prompt = f"System: {system_message}\n\nUser: {prompt}\n\nAssistant: " if system_message else f"User: {prompt}\n\nAssistant: "
+                
+                # Prepare generation config
+                generation_config = {
+                    "temperature": self.model_config['temperature'],
+                    "top_p": self.model_config.get('top_p', 1),
+                    "top_k": self.model_config.get('top_k', 1),
+                    "max_output_tokens": self.model_config['max_tokens'],
+                }
+                
+                # Generate content
+                response = self.model.generate_content(full_prompt, generation_config=generation_config)
+            else:
+                # Direct use of provided content (e.g., multimodal)
+                generation_config = {
+                    "temperature": self.model_config['temperature'],
+                    "top_p": self.model_config.get('top_p', 1),
+                    "top_k": self.model_config.get('top_k', 1),
+                    "max_output_tokens": self.model_config['max_tokens'],
+                }
+                
+                response = self.model.generate_content(prompt, generation_config=generation_config)
             
             # Extract text from response
             content = response.text

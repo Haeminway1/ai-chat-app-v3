@@ -98,6 +98,16 @@ const Sidebar = () => {
     await updateParameters(modelName, params);
   };
 
+  const handleSettingsClick = () => {
+    navigate('/settings');
+  };
+
+  const handleApiKeysClick = (e) => {
+    e.preventDefault();
+    // Use a direct location change instead of React Router's navigate
+    window.location.href = '/api-keys';
+  };
+
   return (
     <>
       <div className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
@@ -124,13 +134,13 @@ const Sidebar = () => {
         <div className="sidebar-footer">
           <button
             className="settings-button outline-button"
-            onClick={() => navigate('/settings')}
+            onClick={handleSettingsClick}
           >
             {collapsed ? '⚙️' : <span>Settings</span>}
           </button>
           <button
             className="api-keys-button outline-button"
-            onClick={() => navigate('/api-keys')}
+            onClick={handleApiKeysClick}
           >
             {collapsed ? '🔑' : <span>API Keys</span>}
           </button>
