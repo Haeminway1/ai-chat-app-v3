@@ -1,0 +1,14 @@
+# System prompts
+system_prompts:
+  default_system: "You are a helpful, accurate, and friendly AI assistant."
+  creative_system: "You are a creative AI assistant that excels at generating imaginative and engaging content."
+  technical_system: "You are a technical AI assistant that provides precise, accurate, and detailed information."
+  business_system: "You are a business-focused AI assistant that provides professional and actionable insights."
+  code_system: "You are a code-focused AI assistant that provides clear, efficient, and well-documented code samples."
+
+# User prompts (for easy reference)
+user_prompts:
+  explain_ai: "Explain the concept of artificial intelligence in simple terms."
+  write_story: "Write a short story about a character who discovers an unexpected ability."
+  code_example: "Write a Python function that sorts a list of dictionaries by a specific key."
+  data_analysis: "Explain how to perform basic data analysis on a CSV file using Python."
