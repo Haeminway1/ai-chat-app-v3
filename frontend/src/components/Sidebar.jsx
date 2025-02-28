@@ -8,12 +8,21 @@ import './Sidebar.css';
 const ModelParameters = ({ currentModel, modelConfig, onUpdateParameters }) => {
   const [temperature, setTemperature] = useState(modelConfig?.temperature || 0.7);
   const [maxTokens, setMaxTokens] = useState(modelConfig?.max_tokens || 4000);
+  const [reasoningEffort, setReasoningEffort] = useState(modelConfig?.reasoning_effort || "medium");
+  
+  const isO3Model = modelConfig?.category === 'o3';
   
   const handleSave = () => {
-    onUpdateParameters(currentModel, {
+    const params = {
       temperature: parseFloat(temperature),
       max_tokens: parseInt(maxTokens)
-    });
+    };
+    
+    if (isO3Model) {
+      params.reasoning_effort = reasoningEffort;
+    }
+    
+    onUpdateParameters(currentModel, params);
   };
   
   return (
@@ -44,6 +53,20 @@ const ModelParameters = ({ currentModel, modelConfig, onUpdateParameters }) => {
         />
       </div>
       
+      {isO3Model && (
+        <div className="model-parameter">
+          <label>Reasoning Effort</label>
+          <select
+            value={reasoningEffort}
+            onChange={(e) => setReasoningEffort(e.target.value)}
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+      )}
+      
       <button className="primary-button" onClick={handleSave}>Save Parameters</button>
     </div>
   );
@@ -57,7 +80,7 @@ const Sidebar = () => {
   const [showParams, setShowParams] = useState(false);
 
   const handleNewChat = async () => {
-    const newChat = await createNewChat();
+    const newChat = await createNewChat("New Chat");
     if (newChat) {
       navigate(`/chat/${newChat.id}`);
     }
@@ -118,7 +141,7 @@ const Sidebar = () => {
         <button className="params-toggle" onClick={toggleParams}>
           {showParams ? 'Hide Parameters' : 'Model Parameters'}
         </button>
-        {showParams && (
+        {showParams && currentModel && modelConfigs[currentModel] && (
           <ModelParameters 
             currentModel={currentModel} 
             modelConfig={modelConfigs[currentModel]}

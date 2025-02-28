@@ -5,7 +5,8 @@ import {
   getChat,
   deleteChat,
   sendMessage,
-  updateSystemMessage as updateSystemAPI
+  updateSystemMessage as updateSystemAPI,
+  updateChatTitle as updateTitleAPI
 } from '../services/chatService';
 
 const ChatContext = createContext(null);
@@ -114,6 +115,27 @@ export const ChatProvider = ({ children }) => {
       setLoading(false);
     }
   };
+  
+  const updateChatTitle = async (chatId, newTitle) => {
+    setLoading(true);
+    try {
+      const result = await updateTitleAPI(chatId, newTitle);
+      if (result.status === "success") {
+        setCurrentChat(result.chat);
+        
+        // Update chat in the list
+        setChats(chats.map(chat => 
+          chat.id === chatId ? result.chat : chat
+        ));
+      }
+      return result;
+    } catch (error) {
+      console.error('Failed to update chat title:', error);
+      return { error: 'Failed to update chat title' };
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadChats();
@@ -130,6 +152,7 @@ export const ChatProvider = ({ children }) => {
     removeChat,
     sendChatMessage,
     updateSystemMessage,
+    updateChatTitle,
     setCurrentChat
   };
 

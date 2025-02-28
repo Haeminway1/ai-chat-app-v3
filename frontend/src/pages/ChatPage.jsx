@@ -125,6 +125,7 @@ const ChatPage = () => {
     createNewChat, 
     sendChatMessage,
     updateSystemMessage,
+    updateChatTitle,
     sending 
   } = useChat();
   const { modelConfigs, currentModel, switchModel } = useModel();
@@ -132,19 +133,29 @@ const ChatPage = () => {
 
   // Track if the chat's model differs from the selected model
   const [modelMismatch, setModelMismatch] = useState(false);
+  // State for chat title editing
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
 
   useEffect(() => {
     if (chatId) {
       loadChat(chatId);
     } else if (!currentChat) {
       // Create a new chat if no chat is selected
-      createNewChat().then(newChat => {
+      createNewChat("New Chat").then(newChat => {
         if (newChat) {
           navigate(`/chat/${newChat.id}`);
         }
       });
     }
   }, [chatId]);
+
+  // Update title state when chat changes
+  useEffect(() => {
+    if (currentChat) {
+      setNewTitle(currentChat.title);
+    }
+  }, [currentChat]);
 
   // Check for model mismatch whenever currentChat or currentModel changes
   useEffect(() => {
@@ -173,7 +184,7 @@ const ChatPage = () => {
     try {
       // Create a new chat with the current model
       const newChat = await createNewChat(
-        `${currentChat.title} (${currentModel})`, 
+        "New Chat", 
         null, 
         currentModel
       );
@@ -183,6 +194,26 @@ const ChatPage = () => {
       }
     } catch (error) {
       console.error('Failed to switch chat model:', error);
+    }
+  };
+
+  const handleStartEditTitle = () => {
+    setIsEditingTitle(true);
+  };
+
+  const handleSaveTitle = async () => {
+    if (currentChat && newTitle.trim()) {
+      await updateChatTitle(currentChat.id, newTitle.trim());
+      setIsEditingTitle(false);
+    }
+  };
+
+  const handleTitleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSaveTitle();
+    } else if (e.key === 'Escape') {
+      setIsEditingTitle(false);
+      setNewTitle(currentChat.title);
     }
   };
 
@@ -201,7 +232,7 @@ const ChatPage = () => {
         <button 
           className="primary-button"
           onClick={async () => {
-            const newChat = await createNewChat();
+            const newChat = await createNewChat("New Chat");
             if (newChat) {
               navigate(`/chat/${newChat.id}`);
             }
@@ -219,7 +250,21 @@ const ChatPage = () => {
     <div className="chat-page">
       <div className="chat-container">
         <div className="chat-header">
-          <h2>{currentChat.title}</h2>
+          <div className="chat-title">
+            {isEditingTitle ? (
+              <input
+                type="text"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                onBlur={handleSaveTitle}
+                onKeyDown={handleTitleKeyDown}
+                autoFocus
+                className="chat-title-input"
+              />
+            ) : (
+              <h2 onClick={handleStartEditTitle}>{currentChat.title}</h2>
+            )}
+          </div>
           <div className="chat-model-info">
             <span>Model: {currentChat.model}</span>
             {modelMismatch && (

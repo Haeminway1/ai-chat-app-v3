@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import './ApiKeysPage.css';
 
 const ApiKeysPage = () => {
   const navigate = useNavigate();
-  const { authenticated, keyStatus, saveKeys } = useAuth();
+  const location = useLocation();
+  const { keyStatus, saveKeys } = useAuth();
   const [apiKeys, setApiKeys] = useState({
     OPENAI_API_KEY: '',
     ANTHROPIC_API_KEY: '',
@@ -14,13 +15,6 @@ const ApiKeysPage = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-
-  useEffect(() => {
-    // Redirect if already authenticated
-    if (authenticated) {
-      navigate('/chat');
-    }
-  }, [authenticated, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -49,7 +43,9 @@ const ApiKeysPage = () => {
         setSuccess(true);
         // Redirect to chat after a short delay
         setTimeout(() => {
-          navigate('/chat');
+          // Redirect to the original intended destination or chat
+          const from = location.state?.from || '/chat';
+          navigate(from, { replace: true });
         }, 1500);
       } else {
         throw new Error('Failed to save API keys');

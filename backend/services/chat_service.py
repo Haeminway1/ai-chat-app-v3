@@ -10,7 +10,7 @@ class ChatService:
     
     def create_chat(self, title=None, provider=None, model=None, parameters=None):
         """Create a new chat"""
-        chat = Chat(title)
+        chat = Chat(title or "New Chat")
         
         # Set model settings if provided
         if provider or model:
@@ -57,6 +57,24 @@ class ChatService:
     def delete_chat(self, chat_id):
         """Delete a chat"""
         return self.chat_store.delete_chat(chat_id)
+    
+    def update_chat_title(self, chat_id, title):
+        """Update the title of a chat"""
+        chat = self.chat_store.get_chat(chat_id)
+        
+        if not chat:
+            return {"error": "Chat not found"}
+        
+        chat.title = title
+        chat.updated_at = datetime.now()
+        
+        # Save the updated chat
+        self.chat_store.save_chat(chat)
+        
+        return {
+            "status": "success",
+            "chat": chat.to_dict()
+        }
     
     def update_system_message(self, chat_id, content):
         """Update system message for a chat"""

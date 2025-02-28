@@ -8,7 +8,7 @@ chat_service = ChatService()
 def create_chat():
     """Create a new chat"""
     data = request.json or {}
-    title = data.get('title')
+    title = data.get('title', 'New Chat')
     provider = data.get('provider')
     model = data.get('model')
     parameters = data.get('parameters')
@@ -65,6 +65,23 @@ def update_system_message(chat_id):
         return jsonify({"error": "Chat not found"}), 404
     
     result = chat_service.update_system_message(chat_id, data['content'])
+    
+    return jsonify(result)
+
+@chat_bp.route('/<chat_id>/title', methods=['POST'])
+def update_chat_title(chat_id):
+    """Update the title of a chat"""
+    data = request.json
+    
+    if not data or 'title' not in data:
+        return jsonify({"error": "No title provided"}), 400
+    
+    chat = chat_service.get_chat(chat_id)
+    
+    if not chat:
+        return jsonify({"error": "Chat not found"}), 404
+    
+    result = chat_service.update_chat_title(chat_id, data['title'])
     
     return jsonify(result)
 

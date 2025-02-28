@@ -252,7 +252,7 @@ class O3MiniModel(AIModel):
                 params = {
                     "model": self.model_config['model'],
                     "messages": messages,
-                    "max_tokens": self.model_config.get('max_tokens', 4000)
+                    "max_completion_tokens": self.model_config.get('max_tokens', 4000)  # Use correct parameter
                 }
                 
                 # Add reasoning effort if specified in config
@@ -269,7 +269,7 @@ class O3MiniModel(AIModel):
                 params = {
                     "model": self.model_config['model'],
                     "messages": messages,
-                    "max_tokens": self.model_config.get('max_tokens', 4000)
+                    "max_completion_tokens": self.model_config.get('max_tokens', 4000)  # Use correct parameter
                 }
                 
                 # Add response format if specified
@@ -296,7 +296,7 @@ class O3MiniModel(AIModel):
                 params = {
                     "model": self.model_config['model'],
                     "messages": messages,
-                    "max_tokens": self.model_config.get('max_tokens', 4000)
+                    "max_completion_tokens": self.model_config.get('max_tokens', 4000)  # Use correct parameter
                 }
                 
                 # Add reasoning effort if specified in config
@@ -379,31 +379,92 @@ class ClaudeModel(AIModel):
             if isinstance(prompt, dict) and 'json_template' in prompt:
                 json_template = prompt.pop('json_template', None)
             
+            # Modified to handle the message format properly for Claude
             if isinstance(prompt, dict) and "messages" in prompt:
-                # Use provided messages structure
-                response = self.client.messages.create(
-                    model=prompt.get("model", self.model_config['model']),
-                    max_tokens=self.model_config['max_tokens'],
-                    temperature=self.model_config['temperature'],
-                    messages=prompt["messages"]
-                )
+                # Claude API doesn't accept content as an array with type
+                # Make sure content is a string for all messages
+                cleaned_messages = []
+                for msg in prompt["messages"]:
+                    if isinstance(msg["content"], list) and len(msg["content"]) > 0 and "text" in msg["content"][0]:
+                        # Convert OpenAI format to Claude format
+                        cleaned_messages.append({
+                            "role": msg["role"],
+                            "content": msg["content"][0]["text"]
+                        })
+                    else:
+                        cleaned_messages.append(msg)
+                
+                # Handle system message differently in Claude
+                system_message = None
+                filtered_messages = []
+                
+                for msg in cleaned_messages:
+                    if msg["role"] == "system":
+                        system_message = msg["content"]
+                    else:
+                        filtered_messages.append(msg)
+                
+                # Create parameters for Claude API
+                params = {
+                    "model": prompt.get("model", self.model_config['model']),
+                    "max_tokens": self.model_config['max_tokens'],
+                    "temperature": self.model_config['temperature'],
+                    "messages": filtered_messages
+                }
+                
+                # Add system message if available
+                if system_message:
+                    params["system"] = system_message
+                    
+                response = self.client.messages.create(**params)
                 content = response.content[0].text
+            
+            elif isinstance(prompt, list):
+                # Handle list of messages
+                system_message = None
+                filtered_messages = []
+                
+                for msg in prompt:
+                    if isinstance(msg["content"], list) and len(msg["content"]) > 0 and "text" in msg["content"][0]:
+                        # Convert content array to string
+                        if msg["role"] == "system":
+                            system_message = msg["content"][0]["text"]
+                        else:
+                            filtered_messages.append({
+                                "role": msg["role"],
+                                "content": msg["content"][0]["text"]
+                            })
+                    else:
+                        if msg["role"] == "system":
+                            system_message = msg["content"]
+                        else:
+                            filtered_messages.append(msg)
+                
+                params = {
+                    "model": self.model_config['model'],
+                    "max_tokens": self.model_config['max_tokens'],
+                    "temperature": self.model_config['temperature'],
+                    "messages": filtered_messages
+                }
+                
+                if system_message:
+                    params["system"] = system_message
+                    
+                response = self.client.messages.create(**params)
+                content = response.content[0].text
+            
             else:
                 # Handle string prompt
                 system_message = self.model_config.get('system_message', '')
                 
                 # Create message with or without system message
                 if system_message:
-                    messages = [
-                        {"role": "user", "content": prompt}
-                    ]
-                    # Claude requires system messages at the message level
                     response = self.client.messages.create(
                         model=self.model_config['model'],
                         max_tokens=self.model_config['max_tokens'],
                         temperature=self.model_config['temperature'],
                         system=system_message,
-                        messages=messages
+                        messages=[{"role": "user", "content": prompt}]
                     )
                 else:
                     # No system message

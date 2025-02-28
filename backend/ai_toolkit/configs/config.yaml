@@ -1,5 +1,5 @@
 current_img_model: gpt-4o
-current_model: gemini-1.5-pro
+current_model: gpt-4
 json_mode: false
 models:
   claude-3-5-haiku-latest:
@@ -39,6 +39,7 @@ models:
     model: gemini-1.5-pro
     provider: google
     supports_system_prompt: true
+    system_message: You are a helpful, accurate, and friendly AI assistant.
     system_prompt_key: default_system
     temperature: 0.7
   gemini-2.0-flash:
@@ -48,6 +49,7 @@ models:
     model: gemini-2.0-flash
     provider: google
     supports_system_prompt: true
+    system_message: You are a helpful, accurate, and friendly AI assistant.
     system_prompt_key: default_system
     temperature: 0.7
   gemini-2.0-flash-lite:

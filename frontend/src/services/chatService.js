@@ -23,3 +23,7 @@ export const sendMessage = (chatId, content) => {
 export const updateSystemMessage = (chatId, content) => {
   return api.post(`/chat/${chatId}/system`, { content });
 };
+
+export const updateChatTitle = (chatId, title) => {
+  return api.post(`/chat/${chatId}/title`, { title });
+};
