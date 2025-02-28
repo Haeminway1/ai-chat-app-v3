@@ -127,8 +127,11 @@ const ChatPage = () => {
     updateSystemMessage,
     sending 
   } = useChat();
-  const { modelConfigs } = useModel();
+  const { modelConfigs, currentModel, switchModel } = useModel();
   const { systemPrompts } = useSettings();
+
+  // Track if the chat's model differs from the selected model
+  const [modelMismatch, setModelMismatch] = useState(false);
 
   useEffect(() => {
     if (chatId) {
@@ -143,6 +146,15 @@ const ChatPage = () => {
     }
   }, [chatId]);
 
+  // Check for model mismatch whenever currentChat or currentModel changes
+  useEffect(() => {
+    if (currentChat && currentModel && currentChat.model !== currentModel) {
+      setModelMismatch(true);
+    } else {
+      setModelMismatch(false);
+    }
+  }, [currentChat, currentModel]);
+
   const handleSendMessage = async (content) => {
     if (!chatId) return;
     
@@ -153,6 +165,25 @@ const ChatPage = () => {
     if (!chatId) return;
     
     await updateSystemMessage(chatId, content);
+  };
+
+  const handleSwitchChatModel = async () => {
+    if (!currentChat || !currentModel) return;
+    
+    try {
+      // Create a new chat with the current model
+      const newChat = await createNewChat(
+        `${currentChat.title} (${currentModel})`, 
+        null, 
+        currentModel
+      );
+      
+      if (newChat) {
+        navigate(`/chat/${newChat.id}`);
+      }
+    } catch (error) {
+      console.error('Failed to switch chat model:', error);
+    }
   };
 
   if (!currentChat && chatId) {
@@ -182,7 +213,7 @@ const ChatPage = () => {
     );
   }
 
-  const modelConfig = modelConfigs[currentChat.model];
+  const modelConfig = modelConfigs[currentChat.model] || {};
 
   return (
     <div className="chat-page">
@@ -190,7 +221,16 @@ const ChatPage = () => {
         <div className="chat-header">
           <h2>{currentChat.title}</h2>
           <div className="chat-model-info">
-            Model: {currentChat.model}
+            <span>Model: {currentChat.model}</span>
+            {modelMismatch && (
+              <button 
+                className="model-mismatch-button" 
+                onClick={handleSwitchChatModel}
+                title="The selected model is different from this chat's model"
+              >
+                Switch to {currentModel}
+              </button>
+            )}
           </div>
         </div>
         

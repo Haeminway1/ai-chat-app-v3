@@ -36,7 +36,7 @@ function App() {
         <ModelProvider>
           <ChatProvider>
             <Routes>
-              <Route path="/" element={<Layout />}>
+              <Route element={<Layout />}>
                 <Route index element={<Navigate to="/chat" replace />} />
                 <Route path="chat" element={
                   <AuthGuard>

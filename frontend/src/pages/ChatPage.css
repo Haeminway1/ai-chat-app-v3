@@ -30,6 +30,23 @@
 .chat-model-info {
   font-size: 0.875rem;
   color: var(--secondary-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.model-mismatch-button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.model-mismatch-button:hover {
+  background-color: var(--primary-hover);
 }
 
 .system-message-container {
