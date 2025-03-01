@@ -72,7 +72,7 @@ const ModelParameters = ({ currentModel, modelConfig, onUpdateParameters }) => {
   );
 };
 
-const Sidebar = () => {
+const Sidebar = ({ onToggle }) => {
   const navigate = useNavigate();
   const { createNewChat } = useChat();
   const { currentModel, modelConfigs, updateParameters } = useModel();
@@ -87,11 +87,17 @@ const Sidebar = () => {
   };
 
   const toggleSidebar = () => {
-    setCollapsed(!collapsed);
-  };
-
-  const toggleParams = () => {
-    setShowParams(!showParams);
+    const newCollapsedState = !collapsed;
+    setCollapsed(newCollapsedState);
+    
+    if (onToggle) {
+      onToggle(newCollapsedState);
+    }
+    
+    // Hide params panel when sidebar is collapsed
+    if (newCollapsedState && showParams) {
+      setShowParams(false);
+    }
   };
 
   const handleUpdateParameters = async (modelName, params) => {
@@ -104,62 +110,67 @@ const Sidebar = () => {
 
   const handleApiKeysClick = (e) => {
     e.preventDefault();
-    // Use a direct location change instead of React Router's navigate
     window.location.href = '/api-keys';
   };
 
   return (
-    <>
-      <div className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
-        <div className="sidebar-header">
-          {!collapsed && <h2>AI Chat App</h2>}
-          <button className="toggle-sidebar" onClick={toggleSidebar}>
-            {collapsed ? '▶' : '◀'}
-          </button>
-        </div>
-        
-        {!collapsed && (
-          <button 
-            className="new-chat-button primary-button"
-            onClick={handleNewChat}
-          >
-            New Chat
-          </button>
-        )}
-        
-        <div className="chats-container">
-          <ChatList />
-        </div>
-        
-        <div className="sidebar-footer">
-          <button
-            className="settings-button outline-button"
-            onClick={handleSettingsClick}
-          >
-            {collapsed ? '⚙️' : <span>Settings</span>}
-          </button>
-          <button
-            className="api-keys-button outline-button"
-            onClick={handleApiKeysClick}
-          >
-            {collapsed ? '🔑' : <span>API Keys</span>}
-          </button>
-        </div>
+    <div className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
+      <div className="sidebar-header">
+        {!collapsed && <h2>AI Chat App</h2>}
+        <button className="toggle-sidebar" onClick={toggleSidebar}>
+          {collapsed ? '▶' : '◀'}
+        </button>
       </div>
       
-      <div className={`model-params-container ${showParams ? 'open' : ''}`}>
-        <button className="params-toggle" onClick={toggleParams}>
-          {showParams ? 'Hide Parameters' : 'Model Parameters'}
+      {!collapsed && (
+        <button 
+          className="new-chat-button primary-button"
+          onClick={handleNewChat}
+        >
+          New Chat
         </button>
-        {showParams && currentModel && modelConfigs[currentModel] && (
-          <ModelParameters 
-            currentModel={currentModel} 
-            modelConfig={modelConfigs[currentModel]}
-            onUpdateParameters={handleUpdateParameters}
-          />
+      )}
+      
+      <div className="sidebar-controls">
+        {!collapsed && (
+          <button 
+            className={`params-toggle ${showParams ? 'active' : ''}`}
+            onClick={() => setShowParams(!showParams)}
+          >
+            {showParams ? 'Hide Parameters' : 'Model Parameters'}
+          </button>
+        )}
+
+        {showParams && !collapsed && currentModel && modelConfigs[currentModel] && (
+          <div className="model-params-panel">
+            <ModelParameters 
+              currentModel={currentModel} 
+              modelConfig={modelConfigs[currentModel]}
+              onUpdateParameters={handleUpdateParameters}
+            />
+          </div>
         )}
       </div>
-    </>
+      
+      <div className="chats-container">
+        <ChatList />
+      </div>
+      
+      <div className="sidebar-footer">
+        <button
+          className="settings-button outline-button"
+          onClick={handleSettingsClick}
+        >
+          {collapsed ? '⚙️' : <span>Settings</span>}
+        </button>
+        <button
+          className="api-keys-button outline-button"
+          onClick={handleApiKeysClick}
+        >
+          {collapsed ? '🔑' : <span>API Keys</span>}
+        </button>
+      </div>
+    </div>
   );
 };
 

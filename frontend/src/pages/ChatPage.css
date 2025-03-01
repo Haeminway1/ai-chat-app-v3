@@ -2,9 +2,15 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  padding: 0;
+  width: 100%;
 }
 
 .chat-container {
+  width: 800px;
+  max-width: 90%;
+  margin: 0 auto;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -12,7 +18,11 @@
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  position: relative;
+  left: 0; /* Ensure no offset is applied */
 }
+
+
 
 .chat-header {
   padding: 1rem;
@@ -149,4 +159,10 @@
   height: 100%;
   gap: 1rem;
   color: var(--secondary-color);
+}
+
+@media (max-width: 768px) {
+  .chat-page {
+    padding: 0 2%;
+  }
 }

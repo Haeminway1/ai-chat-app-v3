@@ -57,6 +57,62 @@
   margin-top: 0.5rem;
 }
 
+.sidebar-controls {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.params-toggle {
+  width: 100%;
+  padding: 0.5rem;
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.params-toggle.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.model-params-panel {
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  margin-top: 0.5rem;
+  padding: 1rem;
+}
+
+.model-parameters h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.model-parameter {
+  margin-bottom: 1rem;
+}
+
+.model-parameter label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.model-parameter input,
+.model-parameter select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
 .chats-container {
   flex: 1;
   overflow-y: auto;
@@ -64,6 +120,10 @@
 }
 
 .sidebar.collapsed .chats-container {
+  display: none;
+}
+
+.sidebar.collapsed .sidebar-controls {
   display: none;
 }
 
@@ -94,61 +154,6 @@
   display: none;
 }
 
-.model-params-container {
-  position: fixed;
-  bottom: 0;
-  left: 280px;
-  background-color: var(--sidebar-color);
-  border-top: 1px solid var(--border-color);
-  width: 280px;
-  padding: 1rem;
-  transform: translateY(100%);
-  transition: transform 0.3s ease;
-  z-index: 100;
-}
-
-.model-params-container.open {
-  transform: translateY(0);
-}
-
-.sidebar.collapsed + .model-params-container {
-  left: 50px;
-}
-
-.sidebar.collapsed + .model-params-container.open {
-  transform: translateY(0);
-}
-
-.params-toggle {
-  position: absolute;
-  top: -40px;
-  right: 1rem;
-  background-color: var(--sidebar-color);
-  border: 1px solid var(--border-color);
-  border-bottom: none;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem 0.5rem 0 0;
-  cursor: pointer;
-}
-
-.model-parameter {
-  margin-bottom: 1rem;
-}
-
-.model-parameter label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-}
-
-.model-parameter input,
-.model-parameter select {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-}
-
 @media (max-width: 768px) {
   .sidebar {
     width: 100%;
@@ -169,12 +174,11 @@
     border: none;
   }
   
-  .chats-container {
+  .sidebar-controls {
     display: none;
   }
-
-  .model-params-container {
-    width: 100%;
-    left: 0;
+  
+  .chats-container {
+    display: none;
   }
 }

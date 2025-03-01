@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useModel } from '../contexts/ModelContext';
 import { useSettings } from '../contexts/SettingsContext';
 import './SettingsPage.css';
 
 const SettingsPage = () => {
+  const navigate = useNavigate();
   const { modelConfigs, currentModel, switchModel } = useModel();
   const { 
     systemPrompts, 
@@ -46,9 +48,19 @@ const SettingsPage = () => {
     setNewPromptKey('');
     setNewPromptText('');
   };
+
+  const handleBackToChat = () => {
+    navigate('/chat');
+  };
   
   return (
     <div className="settings-page">
+      <div className="settings-header">
+        <button onClick={handleBackToChat} className="back-button primary-button">
+          Back to Chat
+        </button>
+      </div>
+      
       <section className="settings-section">
         <h2>Global Settings</h2>
         
@@ -123,6 +135,12 @@ const SettingsPage = () => {
           </form>
         </div>
       </section>
+      
+      <div className="settings-footer">
+        <button onClick={handleBackToChat} className="primary-button">
+          Return to Chat
+        </button>
+      </div>
     </div>
   );
 };

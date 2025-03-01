@@ -1,137 +1,160 @@
 .settings-page {
-    max-width: 800px;
-    margin: 0 auto;
-  }
-  
-  .settings-section {
-    background-color: var(--chat-background);
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  }
-  
-  .settings-section h2 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border-color);
-  }
-  
-  .setting-item {
-    margin-bottom: 1.5rem;
-  }
-  
-  .setting-description {
-    margin-top: 0.5rem;
-    color: var(--secondary-color);
-    font-size: 0.875rem;
-  }
-  
-  .toggle-label {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    cursor: pointer;
-    user-select: none;
-  }
-  
-  .toggle-label input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-  
-  .toggle-slider {
-    position: relative;
-    display: inline-block;
-    width: 40px;
-    height: 20px;
-    background-color: #ccc;
-    border-radius: 20px;
-    transition: .4s;
-    margin-left: 10px;
-  }
-  
-  .toggle-slider:before {
-    position: absolute;
-    content: "";
-    height: 16px;
-    width: 16px;
-    left: 2px;
-    bottom: 2px;
-    background-color: white;
-    border-radius: 50%;
-    transition: .4s;
-  }
-  
-  input:checked + .toggle-slider {
-    background-color: var(--primary-color);
-  }
-  
-  input:checked + .toggle-slider:before {
-    transform: translateX(20px);
-  }
-  
-  .model-prompts {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-  }
-  
-  .model-prompt-setting {
-    padding: 1rem;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-  }
-  
-  .model-prompt-setting h3 {
-    margin-top: 0;
-    margin-bottom: 0.5rem;
-  }
-  
-  .model-prompt-setting select {
-    width: 100%;
-    padding: 0.5rem;
-    margin-bottom: 1rem;
-  }
-  
-  .prompt-preview {
-    background-color: var(--background-color);
-    padding: 0.75rem;
-    border-radius: 4px;
-    font-size: 0.875rem;
-    white-space: pre-wrap;
-    max-height: 100px;
-    overflow-y: auto;
-  }
-  
-  .add-prompt-form {
-    background-color: var(--background-color);
-    padding: 1rem;
-    border-radius: 4px;
-  }
-  
-  .add-prompt-form h3 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-  }
-  
-  .form-group {
-    margin-bottom: 1rem;
-  }
-  
-  .form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-  }
-  
-  .form-group input,
-  .form-group textarea {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-  }
+  max-width: 800px;
+  margin: 0 auto;
+  padding-bottom: 2rem;
+}
+
+.settings-header {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 1rem;
+}
+
+.back-button {
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.settings-section {
+  background-color: var(--chat-background);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.settings-section h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.setting-item {
+  margin-bottom: 1.5rem;
+}
+
+.setting-description {
+  margin-top: 0.5rem;
+  color: var(--secondary-color);
+  font-size: 0.875rem;
+}
+
+.toggle-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-label input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+  background-color: #ccc;
+  border-radius: 20px;
+  transition: .4s;
+  margin-left: 10px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: .4s;
+}
+
+input:checked + .toggle-slider {
+  background-color: var(--primary-color);
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+.model-prompts {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.model-prompt-setting {
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.model-prompt-setting h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.model-prompt-setting select {
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.prompt-preview {
+  background-color: var(--background-color);
+  padding: 0.75rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  white-space: pre-wrap;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.add-prompt-form {
+  background-color: var(--background-color);
+  padding: 1rem;
+  border-radius: 4px;
+}
+
+.add-prompt-form h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.settings-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.settings-footer button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1.1rem;
+}

@@ -74,7 +74,38 @@ export const ChatProvider = ({ children }) => {
     }
   };
 
+  const addLocalMessage = (chatId, content, role = 'user') => {
+    // Create a temporary message locally before sending to server
+    const tempId = `temp-${Date.now()}`;
+    const tempMessage = {
+      id: tempId,
+      role: role,
+      content: content,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Update currentChat and chats with the temporary message
+    if (currentChat && currentChat.id === chatId) {
+      const updatedChat = {
+        ...currentChat,
+        messages: [...currentChat.messages, tempMessage]
+      };
+      setCurrentChat(updatedChat);
+      
+      // Also update in the chats list
+      setChats(chats.map(chat => 
+        chat.id === chatId ? updatedChat : chat
+      ));
+    }
+    
+    return tempId;
+  };
+
   const sendChatMessage = async (chatId, content) => {
+    // First add the message locally for immediate display
+    const tempId = addLocalMessage(chatId, content);
+    
+    // Then send to the server
     setSending(true);
     try {
       const result = await sendMessage(chatId, content);
@@ -153,7 +184,8 @@ export const ChatProvider = ({ children }) => {
     sendChatMessage,
     updateSystemMessage,
     updateChatTitle,
-    setCurrentChat
+    setCurrentChat,
+    addLocalMessage
   };
 
   return (

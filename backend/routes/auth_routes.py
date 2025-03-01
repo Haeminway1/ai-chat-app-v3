@@ -81,6 +81,7 @@ def check_auth():
         if key not in os.environ and value:
             os.environ[key] = value
     
+    # Consider user authenticated if any key is set
     any_key_set = any(
         key in api_keys and api_keys[key] 
         for key in ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'GENAI_API_KEY']
