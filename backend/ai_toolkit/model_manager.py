@@ -38,9 +38,10 @@ class ModelManager:
         # Initialize model instances
         self.current_model = None
         self.current_img_model = None
-        self._initialize_models()
         
-        logger.info(f"ModelManager initialized with {self.get_current_model()} model")
+        # Don't initialize models at startup to avoid API key errors
+        # Models will be initialized on-demand when needed
+        logger.info(f"ModelManager initialized with configurations loaded")
 
     def _load_config(self, config_path: str) -> Dict:
         """
@@ -235,16 +236,44 @@ class ModelManager:
             if img_model_class is None:
                 raise ValueError(f"Unsupported image model type: {img_model_type}")
             
-            # Create model instances
-            self.current_model = model_class(model_config)
-            logger.info(f"Initialized {model_type} model with provider {model_config.get('provider', 'unknown')}")
-                
-            self.current_img_model = img_model_class(img_model_config)
-            logger.info(f"Initialized {img_model_type} image model with provider {img_model_config.get('provider', 'unknown')}")
-                
+            # Check for required API keys before creating model instances
+            provider = model_config.get('provider', '')
+            img_provider = img_model_config.get('provider', '')
+            
+            # Only create model instances if required API keys are available
+            self.current_model = None
+            self.current_img_model = None
+            
+            try:
+                # Create model instances only if API keys are available
+                if provider == 'openai' and os.getenv('OPENAI_API_KEY'):
+                    self.current_model = model_class(model_config)
+                    logger.info(f"Initialized {model_type} model with provider {provider}")
+                elif provider == 'anthropic' and os.getenv('ANTHROPIC_API_KEY'):
+                    self.current_model = model_class(model_config)
+                    logger.info(f"Initialized {model_type} model with provider {provider}")
+                elif provider == 'google' and os.getenv('GENAI_API_KEY'):
+                    self.current_model = model_class(model_config)
+                    logger.info(f"Initialized {model_type} model with provider {provider}")
+                    
+                # Initialize image model if API key is available
+                if img_provider == 'openai' and os.getenv('OPENAI_API_KEY'):
+                    self.current_img_model = img_model_class(img_model_config)
+                    logger.info(f"Initialized {img_model_type} image model with provider {img_provider}")
+                elif img_provider == 'anthropic' and os.getenv('ANTHROPIC_API_KEY'):
+                    self.current_img_model = img_model_class(img_model_config)
+                    logger.info(f"Initialized {img_model_type} image model with provider {img_provider}")
+                elif img_provider == 'google' and os.getenv('GENAI_API_KEY'):
+                    self.current_img_model = img_model_class(img_model_config)
+                    logger.info(f"Initialized {img_model_type} image model with provider {img_provider}")
+            except Exception as e:
+                logger.warning(f"Some models couldn't be initialized: {e}")
+                # Continue anyway - we'll check for None models when generating content
+                    
         except Exception as e:
             logger.error(f"Error initializing models: {e}")
-            raise
+            # Don't raise - this allows the app to start even if model initialization fails
+            # We'll check for None models when generating content
 
     def change_model(self, model_type: str, is_img_model: bool = False):
         """
@@ -394,12 +423,23 @@ class ModelManager:
             str: Generated content
         """
         # Determine which model to use
-        model = self.current_img_model if use_img_model else self.current_model
         model_type = self.get_current_img_model() if use_img_model else self.get_current_model()
         provider = self.config.get('models', {}).get(model_type, {}).get('provider', '')
         
-        # Validate API key for the selected provider
-        try:
+        # Try to initialize models if they aren't already initialized
+        if self.current_model is None or self.current_img_model is None:
+            try:
+                self._initialize_models()
+            except Exception as e:
+                logger.warning(f"Model initialization attempt failed: {e}")
+                # Continue - we'll check the specific model below
+        
+        # Get the appropriate model based on use_img_model flag
+        model = self.current_img_model if use_img_model else self.current_model
+        
+        # Check if required model is available
+        if model is None:
+            # Check which API key is missing
             if provider == 'openai':
                 api_key = os.getenv('OPENAI_API_KEY')
                 if not api_key:
@@ -412,9 +452,7 @@ class ModelManager:
                 api_key = os.getenv('GENAI_API_KEY')
                 if not api_key:
                     return f"Error: Google AI API key not found. Please provide an API key for {provider}."
-        except Exception as e:
-            logger.error(f"API key validation error: {e}")
-            return f"Error validating API keys: {str(e)}"
+            return f"Error: Model {model_type} could not be initialized. Please check API keys and try again."
         
         # Check for JSON mode
         json_mode = self.config.get('json_mode', False)
@@ -511,7 +549,7 @@ class ModelManager:
         
         # If it's a string, convert to proper format
         if isinstance(prompt, str):
-            system_message = self.current_model.model_config.get('system_message', '')
+            system_message = self.current_model.model_config.get('system_message', '') if self.current_model else ''
             
             if provider == 'openai':
                 messages = []
@@ -557,6 +595,24 @@ class ModelManager:
         """
         model_type = self.get_current_img_model()
         json_mode = self.config.get('json_mode', False)
+        
+        # Try to initialize models if they aren't already initialized
+        if self.current_img_model is None:
+            try:
+                self._initialize_models()
+            except Exception as e:
+                logger.warning(f"Model initialization attempt failed: {e}")
+        
+        # Check if image model is available
+        if self.current_img_model is None:
+            provider = self.config.get('models', {}).get(model_type, {}).get('provider', '')
+            if provider == 'openai':
+                return f"Error: OpenAI API key not found. Please provide an API key for {provider}."
+            elif provider == 'anthropic':
+                return f"Error: Anthropic API key not found. Please provide an API key for {provider}."
+            elif provider == 'google':
+                return f"Error: Google AI API key not found. Please provide an API key for {provider}."
+            return f"Error: Image model could not be initialized. Please check API keys and try again."
         
         try:
             # Read image file
