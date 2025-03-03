@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useChat } from '../contexts/ChatContext';
 import { useModel } from '../contexts/ModelContext';
 import { useSettings } from '../contexts/SettingsContext';
@@ -11,15 +11,18 @@ const SystemMessage = ({ chat, modelConfig, systemPrompts, onUpdateSystemMessage
   const [editing, setEditing] = useState(false);
   const [systemMessage, setSystemMessage] = useState('');
   const [selectedPromptKey, setSelectedPromptKey] = useState('default_system');
+  const [collapsed, setCollapsed] = useState(false);
   
   useEffect(() => {
     // Find system message
+    if (!chat || !chat.messages) return;
+    
     const sysMsg = chat.messages.find(msg => msg.role === 'system');
     if (sysMsg) {
       setSystemMessage(sysMsg.content);
       
       // Try to determine which prompt key matches this content
-      const promptKey = Object.entries(systemPrompts).find(
+      const promptKey = Object.entries(systemPrompts || {}).find(
         ([key, content]) => content === sysMsg.content
       )?.[0] || 'default_system';
       
@@ -41,6 +44,10 @@ const SystemMessage = ({ chat, modelConfig, systemPrompts, onUpdateSystemMessage
     setSystemMessage(systemPrompts[key] || '');
   };
   
+  if (!chat || !modelConfig) {
+    return null;
+  }
+  
   const supportsSystemPrompt = modelConfig?.supports_system_prompt !== false;
   
   if (!supportsSystemPrompt) {
@@ -57,58 +64,70 @@ const SystemMessage = ({ chat, modelConfig, systemPrompts, onUpdateSystemMessage
   }
   
   return (
-    <div className="system-message-container">
+    <div className={`system-message-container ${collapsed ? 'collapsed' : ''}`}>
       <div className="system-message-header">
         <h3>System Message</h3>
-        <button 
-          className="system-message-toggle"
-          onClick={() => setEditing(!editing)}
-        >
-          {editing ? 'Cancel' : 'Edit'}
-        </button>
+        <div className="system-message-controls">
+          <button 
+            className="system-message-toggle"
+            onClick={() => setEditing(!editing)}
+          >
+            {editing ? 'Cancel' : 'Edit'}
+          </button>
+          <button 
+            className="system-message-collapse"
+            onClick={() => setCollapsed(!collapsed)}
+          >
+            {collapsed ? '▼' : '▲'}
+          </button>
+        </div>
       </div>
       
-      {editing ? (
+      {!collapsed && (
         <div className="system-message-content">
-          <div className="model-parameter">
-            <label>Prompt Template:</label>
-            <select value={selectedPromptKey} onChange={handleSelectPrompt}>
-              {Object.keys(systemPrompts).map(key => (
-                <option key={key} value={key}>
-                  {key}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <textarea
-            className="system-message-input"
-            value={systemMessage}
-            onChange={(e) => setSystemMessage(e.target.value)}
-            placeholder="Enter a system message to set the behavior of the AI..."
-          />
-          
-          <div className="system-message-actions">
-            <button 
-              className="secondary-button"
-              onClick={() => setEditing(false)}
-            >
-              Cancel
-            </button>
-            <button 
-              className="primary-button"
-              onClick={handleSaveSystem}
-            >
-              Save
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="system-message-display">
-          {systemMessage || (
-            <span className="system-message-placeholder">
-              No system message set. Click "Edit" to add one.
-            </span>
+          {editing ? (
+            <>
+              <div className="model-parameter">
+                <label>Prompt Template:</label>
+                <select value={selectedPromptKey} onChange={handleSelectPrompt}>
+                  {Object.keys(systemPrompts || {}).map(key => (
+                    <option key={key} value={key}>
+                      {key}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <textarea
+                className="system-message-input"
+                value={systemMessage}
+                onChange={(e) => setSystemMessage(e.target.value)}
+                placeholder="Enter a system message to set the behavior of the AI..."
+              />
+              
+              <div className="system-message-actions">
+                <button 
+                  className="secondary-button"
+                  onClick={() => setEditing(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="primary-button"
+                  onClick={handleSaveSystem}
+                >
+                  Save
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="system-message-display">
+              {systemMessage || (
+                <span className="system-message-placeholder">
+                  No system message set. Click "Edit" to add one.
+                </span>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -119,6 +138,7 @@ const SystemMessage = ({ chat, modelConfig, systemPrompts, onUpdateSystemMessage
 const ChatPage = () => {
   const { chatId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { 
     currentChat, 
     loadChat, 
@@ -126,29 +146,60 @@ const ChatPage = () => {
     sendChatMessage,
     updateSystemMessage,
     updateChatTitle,
-    sending 
+    loading,
+    lastLoadedChatId
   } = useChat();
-  const { modelConfigs, currentModel, switchModel } = useModel();
+  const { modelConfigs } = useModel();
   const { systemPrompts } = useSettings();
 
-  // Track if the chat's model differs from the selected model
-  const [modelMismatch, setModelMismatch] = useState(false);
   // State for chat title editing
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [newTitle, setNewTitle] = useState('');
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [loadTried, setLoadTried] = useState(false);
+  
+  // Ref to track if we need to create a new chat
+  const shouldCreateChat = useRef(false);
 
+  // Effect to handle chat loading or creation
   useEffect(() => {
-    if (chatId) {
-      loadChat(chatId);
-    } else if (!currentChat) {
-      // Create a new chat if no chat is selected
+    // Only handle initial navigation once
+    if (!loadTried) {
+      setLoadTried(true);
+      
+      if (chatId) {
+        // Try to load an existing chat if chatId doesn't match last loaded
+        if (!currentChat || chatId !== lastLoadedChatId) {
+          loadChat(chatId)
+            .then(result => {
+              if (!result) {
+                setLoadFailed(true);
+                shouldCreateChat.current = true;
+              }
+            })
+            .catch(() => {
+              setLoadFailed(true);
+              shouldCreateChat.current = true;
+            });
+        }
+      } else if (location.pathname === '/chat') {
+        // Only create a new chat when specifically navigating to base /chat path
+        shouldCreateChat.current = true;
+      }
+    }
+  }, [chatId, loadChat, loadTried, location.pathname, currentChat, lastLoadedChatId]);
+
+  // Handle creating a new chat if needed
+  useEffect(() => {
+    if (shouldCreateChat.current && !currentChat && !loading) {
+      shouldCreateChat.current = false;
       createNewChat("New Chat").then(newChat => {
         if (newChat) {
-          navigate(`/chat/${newChat.id}`);
+          navigate(`/chat/${newChat.id}`, { replace: true });
         }
       });
     }
-  }, [chatId]);
+  }, [createNewChat, currentChat, navigate, loading]);
 
   // Update title state when chat changes
   useEffect(() => {
@@ -157,44 +208,23 @@ const ChatPage = () => {
     }
   }, [currentChat]);
 
-  // Check for model mismatch whenever currentChat or currentModel changes
+  // Check if chat ID change requires a new load
   useEffect(() => {
-    if (currentChat && currentModel && currentChat.model !== currentModel) {
-      setModelMismatch(true);
-    } else {
-      setModelMismatch(false);
+    if (chatId && lastLoadedChatId !== chatId && currentChat?.id !== chatId) {
+      loadChat(chatId);
     }
-  }, [currentChat, currentModel]);
+  }, [chatId, lastLoadedChatId, currentChat, loadChat]);
 
   const handleSendMessage = async (content) => {
-    if (!chatId) return;
+    if (!chatId || !currentChat) return;
     
     await sendChatMessage(chatId, content);
   };
   
   const handleUpdateSystemMessage = async (content) => {
-    if (!chatId) return;
+    if (!chatId || !currentChat) return;
     
     await updateSystemMessage(chatId, content);
-  };
-
-  const handleSwitchChatModel = async () => {
-    if (!currentChat || !currentModel) return;
-    
-    try {
-      // Create a new chat with the current model
-      const newChat = await createNewChat(
-        "New Chat", 
-        null, 
-        currentModel
-      );
-      
-      if (newChat) {
-        navigate(`/chat/${newChat.id}`);
-      }
-    } catch (error) {
-      console.error('Failed to switch chat model:', error);
-    }
   };
 
   const handleStartEditTitle = () => {
@@ -213,19 +243,46 @@ const ChatPage = () => {
       handleSaveTitle();
     } else if (e.key === 'Escape') {
       setIsEditingTitle(false);
-      setNewTitle(currentChat.title);
+      setNewTitle(currentChat?.title || '');
     }
   };
 
-  if (!currentChat && chatId) {
+  const handleSettingsClick = () => {
+    navigate('/settings', { state: { from: location.pathname } });
+  };
+
+  // Show loading state if trying to load a chat
+  if (loading && chatId && !currentChat) {
     return (
       <div className="chat-loading">
+        <div className="spinner"></div>
         <p>Loading chat...</p>
       </div>
     );
   }
 
-  if (!currentChat) {
+  // Show error if load failed
+  if (loadFailed && !currentChat) {
+    return (
+      <div className="chat-loading">
+        <p>Failed to load the chat. The chat may have been deleted or doesn't exist.</p>
+        <button 
+          className="primary-button"
+          onClick={async () => {
+            const newChat = await createNewChat("New Chat");
+            if (newChat) {
+              navigate(`/chat/${newChat.id}`, { replace: true });
+            }
+          }}
+        >
+          Create New Chat
+        </button>
+      </div>
+    );
+  }
+
+  // If no chat is selected, prompt to create one
+  if (!chatId && !currentChat) {
     return (
       <div className="no-chat-selected">
         <p>Select a chat or create a new one to start.</p>
@@ -234,7 +291,7 @@ const ChatPage = () => {
           onClick={async () => {
             const newChat = await createNewChat("New Chat");
             if (newChat) {
-              navigate(`/chat/${newChat.id}`);
+              navigate(`/chat/${newChat.id}`, { replace: true });
             }
           }}
         >
@@ -244,10 +301,27 @@ const ChatPage = () => {
     );
   }
 
+  if (!currentChat) {
+    return (
+      <div className="chat-loading">
+        <div className="spinner"></div>
+        <p>Loading chat...</p>
+      </div>
+    );
+  }
+
   const modelConfig = modelConfigs[currentChat.model] || {};
 
   return (
     <div className="chat-page">
+      <button 
+        className="settings-button global-settings-button"
+        onClick={handleSettingsClick}
+        title="Settings"
+      >
+        <span className="icon">⚙️</span>
+      </button>
+      
       <div className="chat-container">
         <div className="chat-header">
           <div className="chat-title">
@@ -266,16 +340,7 @@ const ChatPage = () => {
             )}
           </div>
           <div className="chat-model-info">
-            <span>Model: {currentChat.model}</span>
-            {modelMismatch && (
-              <button 
-                className="model-mismatch-button" 
-                onClick={handleSwitchChatModel}
-                title="The selected model is different from this chat's model"
-              >
-                Switch to {currentModel}
-              </button>
-            )}
+            <span>{currentChat.model}</span>
           </div>
         </div>
         
@@ -294,7 +359,7 @@ const ChatPage = () => {
         
         <MessageInput 
           onSendMessage={handleSendMessage}
-          disabled={sending}
+          disabled={loading}
         />
       </div>
     </div>
