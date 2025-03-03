@@ -85,6 +85,23 @@ def update_chat_title(chat_id):
     
     return jsonify(result)
 
+@chat_bp.route('/<chat_id>/model', methods=['POST'])
+def update_chat_model(chat_id):
+    """Update the model of a chat"""
+    data = request.json
+    
+    if not data or 'model' not in data:
+        return jsonify({"error": "No model provided"}), 400
+    
+    chat = chat_service.get_chat(chat_id)
+    
+    if not chat:
+        return jsonify({"error": "Chat not found"}), 404
+    
+    result = chat_service.update_chat_model(chat_id, data['model'])
+    
+    return jsonify(result)
+
 @chat_bp.route('/<chat_id>', methods=['DELETE'])
 def delete_chat(chat_id):
     """Delete a chat"""
