@@ -118,6 +118,38 @@ class ChatService:
             "chat": chat.to_dict()
         }
     
+    def update_chat_model(self, chat_id, model):
+        """Update the model for a chat"""
+        chat = self.chat_store.get_chat(chat_id)
+        
+        if not chat:
+            return {"error": "Chat not found"}
+        
+        # Check if model exists in configuration
+        if model not in self.model_manager.config.get('models', {}):
+            return {"error": f"Model {model} not found in configuration"}
+        
+        # Update model and related settings
+        chat.model = model
+        
+        # Get provider from model mapping
+        provider_info = self.model_manager.config.get('provider_mapping', {}).get(model, {})
+        chat.provider = provider_info.get('provider')
+        
+        # Update parameters
+        chat.parameters = self.model_manager.get_parameters(chat.provider, chat.model)
+        
+        # Update chat timestamp
+        chat.updated_at = datetime.now()
+        
+        # Save the updated chat
+        self.chat_store.save_chat(chat)
+        
+        return {
+            "status": "success",
+            "chat": chat.to_dict()
+        }
+    
     def add_message_and_get_response(self, chat_id, content):
         """Add a user message to a chat and get AI response"""
         chat = self.chat_store.get_chat(chat_id)
