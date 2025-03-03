@@ -27,3 +27,7 @@ export const updateSystemMessage = (chatId, content) => {
 export const updateChatTitle = (chatId, title) => {
   return api.post(`/chat/${chatId}/title`, { title });
 };
+
+export const updateChatModel = (chatId, model) => {
+  return api.post(`/chat/${chatId}/model`, { model });
+};
