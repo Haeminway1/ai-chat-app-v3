@@ -1,0 +1,34 @@
+.message-input-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    background-color: var(--chat-background);
+    border-top: 1px solid var(--border-color);
+  }
+  
+  .message-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    resize: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+  }
+  
+  .message-input:focus {
+    border-color: var(--primary-color);
+  }
+  
+  .send-button {
+    align-self: flex-end;
+    padding: 0.5rem 1.5rem;
+  }
+  
+  .send-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
