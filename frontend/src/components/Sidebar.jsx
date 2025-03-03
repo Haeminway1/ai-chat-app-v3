@@ -1,16 +1,41 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useChat } from '../contexts/ChatContext';
 import { useModel } from '../contexts/ModelContext';
+import { useSettings } from '../contexts/SettingsContext';
 import ChatList from './chat/ChatList';
 import './Sidebar.css';
 
-const ModelParameters = ({ currentModel, modelConfig, onUpdateParameters }) => {
+const ModelParameters = ({ currentModel, modelConfig, onUpdateParameters, onSwitchModel }) => {
+  const { jsonMode, toggleJsonMode } = useSettings();
   const [temperature, setTemperature] = useState(modelConfig?.temperature || 0.7);
   const [maxTokens, setMaxTokens] = useState(modelConfig?.max_tokens || 4000);
   const [reasoningEffort, setReasoningEffort] = useState(modelConfig?.reasoning_effort || "medium");
   
+  const { 
+    getAllProviders,
+    getModelsByProvider 
+  } = useModel();
+  
   const isO3Model = modelConfig?.category === 'o3';
+  
+  // Get all providers and models
+  const providers = getAllProviders();
+  
+  const handleModelChange = (e) => {
+    onSwitchModel(e.target.value);
+  };
+  
+  const getProviderName = (provider) => {
+    if (provider === 'openai') return 'OpenAI';
+    if (provider === 'anthropic') return 'Anthropic';
+    if (provider === 'google') return 'Google';
+    return provider;
+  };
+
+  const getCategoryName = (category) => {
+    return category.toUpperCase();
+  };
   
   const handleSave = () => {
     const params = {
@@ -28,6 +53,25 @@ const ModelParameters = ({ currentModel, modelConfig, onUpdateParameters }) => {
   return (
     <div className="model-parameters">
       <h3>Model Parameters</h3>
+      
+      <div className="model-parameter model-selector">
+        <label>Model</label>
+        <select value={currentModel || ''} onChange={handleModelChange}>
+          {providers.map(provider => {
+            const modelsByCategory = getModelsByProvider(provider);
+            return Object.entries(modelsByCategory).map(([category, models]) => (
+              <optgroup key={`${provider}-${category}`} 
+                label={`${getProviderName(provider)} - ${getCategoryName(category)}`}>
+                {models.map(model => (
+                  <option key={model} value={model}>
+                    {model}
+                  </option>
+                ))}
+              </optgroup>
+            ));
+          })}
+        </select>
+      </div>
       
       <div className="model-parameter">
         <label>Temperature</label>
@@ -67,6 +111,17 @@ const ModelParameters = ({ currentModel, modelConfig, onUpdateParameters }) => {
         </div>
       )}
       
+      <div className="json-mode-toggle">
+        <label>
+          <input 
+            type="checkbox" 
+            checked={jsonMode} 
+            onChange={() => toggleJsonMode(!jsonMode)} 
+          />
+          JSON Mode
+        </label>
+      </div>
+      
       <button className="primary-button" onClick={handleSave}>Save Parameters</button>
     </div>
   );
@@ -74,8 +129,9 @@ const ModelParameters = ({ currentModel, modelConfig, onUpdateParameters }) => {
 
 const Sidebar = ({ onToggle }) => {
   const navigate = useNavigate();
-  const { createNewChat } = useChat();
-  const { currentModel, modelConfigs, updateParameters } = useModel();
+  const location = useLocation();
+  const { createNewChat, updateChatModel } = useChat();
+  const { currentModel, modelConfigs, updateParameters, switchModel } = useModel();
   const [collapsed, setCollapsed] = useState(false);
   const [showParams, setShowParams] = useState(false);
 
@@ -103,14 +159,17 @@ const Sidebar = ({ onToggle }) => {
   const handleUpdateParameters = async (modelName, params) => {
     await updateParameters(modelName, params);
   };
-
-  const handleSettingsClick = () => {
-    navigate('/settings');
-  };
-
-  const handleApiKeysClick = (e) => {
-    e.preventDefault();
-    window.location.href = '/api-keys';
+  
+  const handleSwitchModel = async (modelType) => {
+    await switchModel(modelType);
+    
+    // Update current chat model if on a chat page
+    if (location.pathname.includes('/chat/')) {
+      const chatId = location.pathname.split('/chat/')[1];
+      if (chatId) {
+        await updateChatModel(chatId, modelType);
+      }
+    }
   };
 
   return (
@@ -147,6 +206,7 @@ const Sidebar = ({ onToggle }) => {
               currentModel={currentModel} 
               modelConfig={modelConfigs[currentModel]}
               onUpdateParameters={handleUpdateParameters}
+              onSwitchModel={handleSwitchModel}
             />
           </div>
         )}
@@ -154,21 +214,6 @@ const Sidebar = ({ onToggle }) => {
       
       <div className="chats-container">
         <ChatList />
-      </div>
-      
-      <div className="sidebar-footer">
-        <button
-          className="settings-button outline-button"
-          onClick={handleSettingsClick}
-        >
-          {collapsed ? '⚙️' : <span>Settings</span>}
-        </button>
-        <button
-          className="api-keys-button outline-button"
-          onClick={handleApiKeysClick}
-        >
-          {collapsed ? '🔑' : <span>API Keys</span>}
-        </button>
       </div>
     </div>
   );
