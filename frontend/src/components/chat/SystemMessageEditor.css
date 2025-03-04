@@ -1,0 +1,95 @@
+.system-message-container {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--background-color);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  
+  .system-message-container.collapsed {
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--background-color);
+    margin-bottom: 0;
+  }
+  
+  .system-message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  
+  .system-message-container.collapsed .system-message-header {
+    margin-bottom: 0;
+  }
+  
+  .system-message-header h3 {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--secondary-color);
+  }
+  
+  .system-message-controls {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .system-message-toggle,
+  .system-message-collapse {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--primary-color);
+    padding: 2px 4px;
+    font-size: 0.9rem;
+  }
+  
+  .system-message-content {
+    position: relative;
+    transition: all 0.3s ease;
+  }
+  
+  .system-message-container.collapsed .system-message-content {
+    max-height: 0;
+    opacity: 0;
+    display: none;
+  }
+  
+  .system-message-input {
+    width: 100%;
+    min-height: 100px;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    resize: vertical;
+    margin-bottom: 0.75rem;
+    background-color: var(--input-background);
+    color: var(--text-color);
+    font-family: inherit;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  .system-message-display {
+    padding: 0.75rem;
+    background-color: var(--background-color);
+    border-radius: 8px;
+    min-height: 60px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  
+  .system-message-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+  
+  .system-message-placeholder {
+    color: var(--secondary-color);
+    font-style: italic;
+  }

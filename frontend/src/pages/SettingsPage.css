@@ -1,0 +1,425 @@
+.settings-page {
+  width: 800px;
+  max-width: 90%;
+  height: 100%;
+  margin: 0 auto;
+  padding: 2rem 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.settings-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  line-height: 1;
+}
+
+.settings-tabs {
+  display: flex;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-top: 2rem;
+  flex-shrink: 0;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.tab-button.active {
+  border-bottom-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.settings-section {
+  background-color: var(--chat-background);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  flex: 1;
+  overflow-y: auto;
+  box-shadow: var(--box-shadow);
+}
+
+.settings-section h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.model-prompts {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.model-prompt-setting {
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  width: 100%;
+}
+
+.model-prompt-setting h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.model-prompt-setting select {
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.prompt-preview {
+  background-color: var(--background-color);
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  white-space: pre-wrap;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.add-prompt-form {
+  background-color: var(--background-color);
+  padding: 1rem;
+  border-radius: 8px;
+  width: 100%;
+}
+
+.add-prompt-form h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+/* API Keys Section */
+.api-keys-container {
+  width: 100%;
+}
+
+.api-keys-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.api-key-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.key-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.key-status {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 1rem;
+  background-color: var(--hover-color);
+}
+
+.key-status.active {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.api-key-group input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-family: monospace;
+}
+
+.key-help {
+  font-size: 0.75rem;
+  color: var(--secondary-color);
+  margin-top: 0.25rem;
+}
+
+.error-message {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--error-color);
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.success-message {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--success-color);
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+/* Appearance Settings */
+.appearance-settings {
+  margin-top: 1rem;
+}
+
+.appearance-settings h3 {
+  margin-bottom: 0.5rem;
+}
+
+.settings-description {
+  color: var(--secondary-color);
+  margin-bottom: 1.5rem;
+}
+
+.theme-selector {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.theme-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  flex: 1;
+  min-width: 120px;
+}
+
+.theme-button:hover {
+  border-color: var(--primary-color);
+}
+
+.theme-button.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.theme-icon {
+  font-size: 1.25rem;
+}
+
+.theme-preview {
+  display: flex;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.theme-preview-light,
+.theme-preview-dark {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.preview-label {
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+.preview-box {
+  width: 100%;
+  height: 160px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.light-preview {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.light-preview:after {
+  content: "";
+  height: 40px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dark-preview {
+  background-color: #0f172a;
+  border: 1px solid #334155;
+}
+
+.dark-preview:after {
+  content: "";
+  height: 40px;
+  background-color: #1e293b;
+  border-bottom: 1px solid #334155;
+}
+/* 프롬프트 목록 스타일 */
+.prompts-list {
+  margin-bottom: 2rem;
+}
+
+.prompt-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.prompt-card {
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.prompt-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background-color: var(--hover-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.prompt-card-header h4 {
+  margin: 0;
+  font-weight: 600;
+}
+
+.prompt-card-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.edit-button, .delete-button, .save-button {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  cursor: pointer;
+  background: none;
+  border: 1px solid var(--border-color);
+}
+
+.edit-button:hover, .save-button:hover {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.delete-button:hover {
+  background-color: var(--error-color);
+  color: white;
+  border-color: var(--error-color);
+}
+
+.prompt-card-content {
+  padding: 1rem;
+  white-space: pre-wrap;
+  max-height: 150px;
+  overflow-y: auto;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.prompt-edit-textarea {
+  width: 100%;
+  min-height: 150px;
+  padding: 1rem;
+  border: none;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  background-color: var(--input-background);
+  color: var(--text-color);
+}
+
+.model-prompts-assignment {
+  margin-top: 2rem;
+}
+
+.model-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.model-prompt-setting {
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  width: calc(50% - 0.5rem);
+  min-width: 250px;
+}
+
+.model-prompt-setting h4 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+}
+
+.model-prompt-setting select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--input-background);
+  color: var(--text-color);
+}
+
+/* 반응형 조정 */
+@media (max-width: 768px) {
+  .model-prompt-setting {
+    width: 100%;
+  }
+}
