@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { useLoop } from '../../contexts/LoopContext';
 import './LoopHeader.css';
 
-const LoopHeader = ({ loop, onTitleChange }) => {
+const LoopHeader = ({ loop, onTitleChange, onSettingsClick }) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [newTitle, setNewTitle] = useState(loop?.title || '');
-  const { isRunning } = useLoop();
 
   const handleStartEditTitle = () => {
     setNewTitle(loop?.title || '');
@@ -82,6 +80,13 @@ const LoopHeader = ({ loop, onTitleChange }) => {
         <div className="participant-count">
           {loop.participants.length} participant{loop.participants.length !== 1 ? 's' : ''}
         </div>
+        <button 
+          className="settings-button" 
+          title="Settings"
+          onClick={onSettingsClick}
+        >
+          ⚙️
+        </button>
       </div>
     </div>
   );

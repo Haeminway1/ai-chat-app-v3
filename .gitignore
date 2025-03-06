@@ -1,4 +1,4 @@
 __pycache__/
-backend/data/api_keys.json
+backend/data/
 frontend/node_modules/
 package-lock.json
