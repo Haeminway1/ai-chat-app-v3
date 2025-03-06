@@ -1,15 +1,38 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import LoopMessage from './LoopMessage';
 import './LoopMessageList.css';
 
 const LoopMessageList = ({ loop }) => {
   const messagesEndRef = useRef(null);
+  const [lastMessageCount, setLastMessageCount] = useState(0);
+  const [isNewMessage, setIsNewMessage] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // 메시지가 변경될 때마다 스크롤
+  // Track message count changes to detect new messages
+  useEffect(() => {
+    if (loop?.messages) {
+      const currentCount = loop.messages.length;
+      
+      // Check if we have a new message
+      if (currentCount > lastMessageCount) {
+        setIsNewMessage(true);
+        
+        // Reset the new message indicator after 1 second
+        const timer = setTimeout(() => {
+          setIsNewMessage(false);
+        }, 1000);
+        
+        return () => clearTimeout(timer);
+      }
+      
+      setLastMessageCount(currentCount);
+    }
+  }, [loop?.messages, lastMessageCount]);
+
+  // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [loop?.messages]);
@@ -28,12 +51,13 @@ const LoopMessageList = ({ loop }) => {
   loop.participants.forEach(p => {
     participantInfo[p.id] = {
       displayName: p.display_name,
-      model: p.model
+      model: p.model,
+      systemPrompt: p.system_prompt
     };
   });
 
   return (
-    <div className="loop-message-list">
+    <div className={`loop-message-list ${isNewMessage ? 'new-message-highlight' : ''}`}>
       {loop.messages.map(message => (
         <LoopMessage 
           key={message.id}
