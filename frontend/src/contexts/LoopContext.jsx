@@ -449,6 +449,37 @@ export const LoopProvider = ({ children }) => {
     };
   }, [updateInterval]);
 
+  // Update the loop polling logic
+  useEffect(() => {
+    // Clear any existing interval
+    if (updateInterval) {
+      clearInterval(updateInterval);
+      setUpdateInterval(null);
+    }
+
+    // Set up polling if we have a current loop that is running
+    if (currentLoop && currentLoop.status === 'running' && currentLoop.id) {
+      const intervalId = setInterval(() => {
+        getLoop(currentLoop.id).then(updatedLoop => {
+          if (updatedLoop) {
+            setCurrentLoop(updatedLoop);
+          }
+        });
+      }, 500); // Poll more frequently (every 500ms)
+      setUpdateInterval(intervalId);
+    } else if (currentLoop && currentLoop.status === 'paused' && currentLoop.id) {
+      // Slower polling for paused loops
+      const intervalId = setInterval(() => {
+        getLoop(currentLoop.id).then(updatedLoop => {
+          if (updatedLoop) {
+            setCurrentLoop(updatedLoop);
+          }
+        });
+      }, 2000); // Poll less frequently when paused
+      setUpdateInterval(intervalId);
+    }
+  }, [currentLoop?.id, currentLoop?.status]);
+
   // Load loops on initial mount
   useEffect(() => {
     loadLoops();

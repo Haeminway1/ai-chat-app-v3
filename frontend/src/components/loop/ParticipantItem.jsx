@@ -3,7 +3,6 @@ import { useModel } from '../../contexts/ModelContext';
 import { useSettings } from '../../contexts/SettingsContext';
 import './ParticipantItem.css';
 
-// 개선된 버전
 const ParticipantItem = ({ participant, index, loopId, onUpdate, onRemove, onMoveUp, onMoveDown, systemPrompts }) => {
   const { modelConfigs } = useModel();
   
@@ -13,6 +12,21 @@ const ParticipantItem = ({ participant, index, loopId, onUpdate, onRemove, onMov
   const [selectedModel, setSelectedModel] = useState(participant.model);
   const [selectedPrompt, setSelectedPrompt] = useState('custom');
   const [systemPrompt, setSystemPrompt] = useState(participant.system_prompt);
+  
+  // Add temperature and token settings
+  const [temperature, setTemperature] = useState(0.7);
+  const [maxTokens, setMaxTokens] = useState(4000);
+  const [reasoningEffort, setReasoningEffort] = useState("medium");
+  
+  // Get initial parameter values from model config when a model is selected
+  useEffect(() => {
+    if (selectedModel && modelConfigs[selectedModel]) {
+      const config = modelConfigs[selectedModel];
+      setTemperature(config.temperature || 0.7);
+      setMaxTokens(config.max_tokens || 4000);
+      setReasoningEffort(config.reasoning_effort || "medium");
+    }
+  }, [selectedModel, modelConfigs]);
   
   // Determine which preset prompt is selected, if any
   useEffect(() => {
@@ -39,6 +53,12 @@ const ParticipantItem = ({ participant, index, loopId, onUpdate, onRemove, onMov
     return modelConfig ? modelConfig.supports_system_prompt !== false : true;
   }, [selectedModel, modelConfigs]);
   
+  // Check if it's an O3 model
+  const isO3Model = React.useMemo(() => {
+    if (!selectedModel || !modelConfigs[selectedModel]) return false;
+    return modelConfigs[selectedModel].category === 'o3';
+  }, [selectedModel, modelConfigs]);
+  
   const handleToggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
@@ -62,7 +82,25 @@ const ParticipantItem = ({ participant, index, loopId, onUpdate, onRemove, onMov
   const handleModelChange = (e) => {
     const newModel = e.target.value;
     setSelectedModel(newModel);
-    onUpdate(participant.id, { model: newModel });
+    
+    // Update model and reset parameters to default for that model
+    if (modelConfigs[newModel]) {
+      const config = modelConfigs[newModel];
+      const updates = { 
+        model: newModel,
+        temperature: config.temperature || 0.7,
+        max_tokens: config.max_tokens || 4000
+      };
+      
+      // Add reasoning_effort for O3 models
+      if (config.category === 'o3') {
+        updates.reasoning_effort = config.reasoning_effort || "medium";
+      }
+      
+      onUpdate(participant.id, updates);
+    } else {
+      onUpdate(participant.id, { model: newModel });
+    }
   };
   
   const handlePromptTypeChange = (e) => {
@@ -90,6 +128,25 @@ const ParticipantItem = ({ participant, index, loopId, onUpdate, onRemove, onMov
     if (window.confirm(`Are you sure you want to remove this participant?`)) {
       onRemove(participant.id);
     }
+  };
+  
+  // New handlers for temperature, tokens, and reasoning effort
+  const handleTemperatureChange = (e) => {
+    const newTemp = parseFloat(e.target.value);
+    setTemperature(newTemp);
+    onUpdate(participant.id, { temperature: newTemp });
+  };
+  
+  const handleMaxTokensChange = (e) => {
+    const newTokens = parseInt(e.target.value);
+    setMaxTokens(newTokens);
+    onUpdate(participant.id, { max_tokens: newTokens });
+  };
+  
+  const handleReasoningEffortChange = (e) => {
+    const newEffort = e.target.value;
+    setReasoningEffort(newEffort);
+    onUpdate(participant.id, { reasoning_effort: newEffort });
   };
   
   // Sort all available models by provider and category
@@ -228,6 +285,65 @@ const ParticipantItem = ({ participant, index, loopId, onUpdate, onRemove, onMov
             </select>
           </div>
           
+          {/* Model Parameters Section (Part 1 in the image) */}
+          <div className="model-parameters-section">
+            <h4>Model Parameters</h4>
+            
+            {/* Temperature slider (non-O3 models only) */}
+            {!isO3Model && (
+              <div className="parameter-item">
+                <label>
+                  Temperature: <span className="parameter-value">{temperature}</span>
+                </label>
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="1" 
+                  step="0.1" 
+                  value={temperature}
+                  onChange={handleTemperatureChange}
+                />
+                <div className="parameter-description">
+                  Controls creativity. Lower values are more deterministic, higher values more creative.
+                </div>
+              </div>
+            )}
+            
+            {/* Max Tokens input */}
+            <div className="parameter-item">
+              <label>Max Tokens</label>
+              <input 
+                type="number" 
+                min="1" 
+                max="100000" 
+                value={maxTokens}
+                onChange={handleMaxTokensChange}
+              />
+              <div className="parameter-description">
+                Maximum number of tokens in the response.
+              </div>
+            </div>
+            
+            {/* Reasoning Effort dropdown (O3 models only) */}
+            {isO3Model && (
+              <div className="parameter-item">
+                <label>Reasoning Effort</label>
+                <select
+                  value={reasoningEffort}
+                  onChange={handleReasoningEffortChange}
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+                <div className="parameter-description">
+                  Controls how much effort the model spends on reasoning.
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* System Prompt Section (Part 2 in the image) */}
           {supportsSystemPrompt ? (
             <div className="participant-system-prompt">
               <div className="system-prompt-select">
@@ -241,17 +357,20 @@ const ParticipantItem = ({ participant, index, loopId, onUpdate, onRemove, onMov
                 </select>
               </div>
               
-              {selectedPrompt === 'custom' && (
-                <div className="custom-prompt-editor">
-                  <textarea
-                    value={systemPrompt}
-                    onChange={handleCustomPromptChange}
-                    onBlur={handleCustomPromptSave}
-                    placeholder="Enter a custom system prompt for this participant..."
-                    rows={4}
-                  />
+              {/* Custom prompt editor (always visible) */}
+              <div className="custom-prompt-editor">
+                <textarea
+                  value={systemPrompt}
+                  onChange={handleCustomPromptChange}
+                  onBlur={handleCustomPromptSave}
+                  placeholder="Enter a custom system prompt for this participant..."
+                  rows={4}
+                  disabled={selectedPrompt !== 'custom' && selectedPrompt !== 'none'}
+                />
+                <div className="prompt-editor-help">
+                  {selectedPrompt !== 'custom' ? 'Using preset prompt. Switch to "Custom" to edit.' : 'Enter custom instructions for this AI participant.'}
                 </div>
-              )}
+              </div>
               
               {selectedPrompt !== 'none' && selectedPrompt !== 'custom' && (
                 <div className="prompt-preview">

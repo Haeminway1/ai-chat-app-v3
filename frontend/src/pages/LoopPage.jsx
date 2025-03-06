@@ -7,7 +7,6 @@ import LoopHeader from '../components/loop/LoopHeader';
 import ParticipantsList from '../components/loop/ParticipantsList';
 import LoopControls from '../components/loop/LoopControls';
 import LoopMessageList from '../components/loop/LoopMessageList';
-import LoopParametersPanel from '../components/loop/LoopParametersPanel';
 import './LoopPage.css';
 
 const LoopPage = () => {
@@ -26,13 +25,12 @@ const LoopPage = () => {
     resetCurrentLoop
   } = useLoop();
   
-  const { currentModel, modelConfigs } = useModel();
+  const { currentModel } = useModel();
   const { systemPrompts } = useSettings();
 
   const [loadFailed, setLoadFailed] = useState(false);
   const [loadTried, setLoadTried] = useState(false);
   const [view, setView] = useState('chat'); // 'setup' or 'chat'
-  const [modelParams, setModelParams] = useState(null);
   
   // Effect to handle loop loading - only load existing loops, don't auto-create
   useEffect(() => {
@@ -47,7 +45,7 @@ const LoopPage = () => {
             if (!result) {
               setLoadFailed(true);
             } else {
-              // 이미 메시지가 있으면 채팅 뷰로 이동, 없으면 설정 뷰로 이동
+              // If there are messages, go to chat view, otherwise go to setup view
               if (result.messages && result.messages.length > 0) {
                 setView('chat');
               } else {
@@ -62,12 +60,24 @@ const LoopPage = () => {
     }
   }, [loopId, loadLoop, loadTried, currentLoop]);
 
-  // 실시간 채팅 메시지 업데이트를 위한 폴링 (루프가 실행 중일 때)
+  // Effect to automatically switch to messages view when loop is running
+  useEffect(() => {
+    if (currentLoop?.status === 'running' && view !== 'chat') {
+      setView('chat');
+    }
+  }, [currentLoop?.status, view]);
+
+  // Real-time chat message updates polling (when loop is running)
   useEffect(() => {
     let pollInterval = null;
     
     if (currentLoop?.status === 'running' && loopId) {
-      // 2초마다 루프 정보 새로 가져오기
+      // Poll more frequently to get real-time updates (every 500ms)
+      pollInterval = setInterval(() => {
+        loadLoop(loopId);
+      }, 500);
+    } else if (currentLoop?.status === 'paused' && loopId) {
+      // Poll less frequently when paused
       pollInterval = setInterval(() => {
         loadLoop(loopId);
       }, 2000);
@@ -114,18 +124,13 @@ const LoopPage = () => {
 
   const handleResetLoop = () => {
     resetCurrentLoop();
-    // 루프를 리셋한 후 setup 뷰로 이동
+    // After resetting the loop, go to setup view
     setView('setup');
   };
   
-  // 설정 버튼 클릭 처리
+  // Settings button click handler
   const handleSettingsClick = () => {
     navigate('/settings', { state: { from: `/loop/${loopId}` } });
-  };
-  
-  // 모델 파라미터 변경 처리
-  const handleModelParamsChange = (params) => {
-    setModelParams(params);
   };
 
   // Show loading state if trying to load a loop
@@ -186,7 +191,7 @@ const LoopPage = () => {
           onSettingsClick={handleSettingsClick}
         />
         
-        {/* 항상 뷰 토글 버튼 표시 */}
+        {/* View toggle */}
         <div className="view-toggle">
           <button 
             className={`view-toggle-button ${view === 'setup' ? 'active' : ''}`} 
@@ -204,18 +209,13 @@ const LoopPage = () => {
         
         {view === 'setup' ? (
           <div className="loop-setup">
+            {/* Participants list with enhanced model parameters */}
             <ParticipantsList 
               loopId={currentLoop.id} 
               systemPrompts={systemPrompts}
             />
             
-            {/* 모델 파라미터 패널 */}
-            <LoopParametersPanel 
-              currentModel={currentModel}
-              modelConfigs={modelConfigs}
-              onModelParametersChange={handleModelParamsChange}
-            />
-            
+            {/* Loop start controls */}
             <LoopControls loopId={currentLoop.id} />
           </div>
         ) : (

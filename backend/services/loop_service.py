@@ -5,7 +5,7 @@ import time
 import traceback
 from datetime import datetime
 from models.loop import Loop, LoopStore
-from ai_toolkit import ModelManager
+from ai_toolkit.model_manager import ModelManager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -58,6 +58,11 @@ class LoopService:
         if loop.participants:
             next_order = max(p.order_index for p in loop.participants) + 1
         
+        # Log system prompt info for debugging
+        logger.info(f"Adding participant to loop {loop_id} with model {model}")
+        logger.info(f"System prompt: {system_prompt}")
+        logger.info(f"Display name: {display_name or f'AI {next_order}'}")
+        
         participant = loop.add_participant(model, next_order, system_prompt, display_name)
         return self.loop_store.save_loop(loop), participant
     
@@ -67,8 +72,14 @@ class LoopService:
         if not loop:
             return None
         
+        # Log update info for debugging
+        logger.info(f"Updating participant {participant_id} in loop {loop_id}")
+        logger.info(f"Updates: {updates}")
+        
         updated_participant = loop.update_participant(participant_id, **updates)
         if updated_participant:
+            # Log the updated participant's information
+            logger.info(f"Updated participant: {updated_participant.to_dict()}")
             return self.loop_store.save_loop(loop), updated_participant
         return None
     
@@ -245,6 +256,10 @@ class LoopService:
                     # No participants to process the message
                     break
                 
+                # Add a "thinking" message to show real-time updates
+                thinking_message = loop.add_message(f"Thinking...", next_participant.id)
+                self.loop_store.save_loop(loop)
+                
                 # Process the message with the next participant's model
                 try:
                     response = self._process_with_model(
@@ -253,8 +268,16 @@ class LoopService:
                         last_message.content
                     )
                     
-                    # Add the response to the loop
-                    loop.add_message(response, next_participant.id)
+                    # Get fresh loop state after processing
+                    loop = self.loop_store.get_loop(loop_id)
+                    
+                    # Find and update the thinking message
+                    for i, msg in enumerate(loop.messages):
+                        if msg.id == thinking_message.id:
+                            loop.messages[i].content = response
+                            break
+                    
+                    # Save the updated loop
                     self.loop_store.save_loop(loop)
                     
                     # Add a small delay to prevent hammering the API
@@ -266,7 +289,16 @@ class LoopService:
                     
                     # Add error message
                     error_msg = f"Error: {str(e)}"
-                    loop.add_message(error_msg, "system")
+                    
+                    # Get fresh loop state
+                    loop = self.loop_store.get_loop(loop_id)
+                    
+                    # Find and update the thinking message with error
+                    for i, msg in enumerate(loop.messages):
+                        if msg.id == thinking_message.id:
+                            loop.messages[i].content = error_msg
+                            break
+                    
                     loop.status = "paused"  # Pause on error
                     self.loop_store.save_loop(loop)
                     break
@@ -287,41 +319,69 @@ class LoopService:
         # Get the model configuration
         model_type = participant.model
         
-        # Change to the appropriate model
-        if model_type != self.model_manager.get_current_model():
-            self.model_manager.change_model(model_type)
+        # Create a new ModelManager instance for each participant to prevent context sharing
+        # This ensures each participant has its own independent model context
+        participant_instance_id = f"{participant.id}_{uuid.uuid4()}"
+        logger.info(f"Creating new ModelManager instance {participant_instance_id} for participant {participant.id}")
+        
+        participant_model_manager = ModelManager()
+        participant_model_manager._initialize_models()
+        
+        # Force change to the appropriate model
+        participant_model_manager.change_model(model_type)
         
         # Create the prompt with system message if needed
-        model_config = self.model_manager.get_model_config(model_type)
+        model_config = participant_model_manager.get_model_config(model_type)
         supports_system = model_config.get('supports_system_prompt', True)
         
+        # Get the full loop to access all messages
+        loop = self.loop_store.get_loop(loop_id)
+        
+        # Log the system prompt being used for debugging
+        logger.info(f"Processing with model {model_type} for participant {participant.id}")
+        logger.info(f"System prompt: '{participant.system_prompt}'")
+        logger.info(f"Display name: '{participant.display_name}'")
+        
         if supports_system and participant.system_prompt:
-            # Format as a conversation with system message
+            # Format as a conversation with system message - use ONLY the original system prompt
             messages = [
                 {"role": "system", "content": participant.system_prompt}
             ]
             
-            # Get all previous messages
-            loop = self.loop_store.get_loop(loop_id)
+            # Get all previous messages including the current content for context
+            messages_for_context = []
             for message in loop.messages:
                 if message.sender == "user":
-                    role = "user"
+                    messages_for_context.append({"role": "user", "content": message.content})
                 elif message.sender == "system":
                     continue  # Skip system error messages
                 else:
                     # Get the participant info for this message
                     msg_participant = loop.get_participant(message.sender)
-                    role = "assistant"  # All AI responses are "assistant" in the API
-                    
-                messages.append({"role": role, "content": message.content})
+                    if msg_participant:
+                        messages_for_context.append({"role": "assistant", "content": message.content})
+                    else:
+                        messages_for_context.append({"role": "assistant", "content": message.content})
+            
+            # Add all messages to the conversation
+            messages.extend(messages_for_context)
+            
+            # Log the conversation being sent to the model
+            logger.info(f"Sending conversation to {model_type}:")
+            for idx, msg in enumerate(messages):
+                logger.info(f"  {idx}. {msg['role']}: {msg['content'][:50]}...")
             
             # Generate response with full conversation context
-            return self.model_manager.generate_content(messages)
+            response = participant_model_manager.generate_content(messages)
+            logger.info(f"Response from {model_type} (participant {participant.id}): {response[:100]}...")
+            
+            return response
         else:
-            # For models without system message support, just use the last message
-            # But prepend the system prompt if available
-            prompt = content
-            if participant.system_prompt:
-                prompt = f"{participant.system_prompt}\n\n{content}"
-                
-            return self.model_manager.generate_content(prompt)
+            # For models without system message support, use the system prompt directly
+            prompt = f"{participant.system_prompt}\n\n{content}"
+            logger.info(f"Sending prompt to {model_type}: {prompt[:100]}...")
+            
+            response = participant_model_manager.generate_content(prompt)
+            logger.info(f"Response from {model_type} (participant {participant.id}): {response[:100]}...")
+            
+            return response

@@ -153,6 +153,63 @@
   color: var(--text-color);
 }
 
+/* New model parameters section */
+.model-parameters-section {
+  background-color: var(--background-color);
+  border-radius: 8px;
+  padding: 0.8rem;
+  margin: 0.5rem 0;
+  border: 1px solid var(--border-color);
+}
+
+.model-parameters-section h4 {
+  margin-top: 0;
+  margin-bottom: 0.8rem;
+  font-size: 0.95rem;
+  color: var(--primary-color);
+}
+
+.parameter-item {
+  margin-bottom: 0.8rem;
+}
+
+.parameter-item label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+}
+
+.parameter-value {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.parameter-item input[type="range"],
+.parameter-item input[type="number"],
+.parameter-item select {
+  width: 100%;
+  padding: 0.4rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background-color: var(--input-background);
+  color: var(--text-color);
+  margin-bottom: 0.3rem;
+}
+
+.parameter-description {
+  font-size: 0.75rem;
+  color: var(--secondary-color);
+  margin-top: 0.1rem;
+}
+
+/* Enhanced system prompt area */
+.custom-prompt-editor {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
 .custom-prompt-editor textarea {
   width: 100%;
   padding: 0.75rem;
@@ -163,6 +220,18 @@
   font-family: inherit;
   background-color: var(--input-background);
   color: var(--text-color);
+}
+
+.custom-prompt-editor textarea:disabled {
+  background-color: var(--hover-color);
+  opacity: 0.7;
+}
+
+.prompt-editor-help {
+  font-size: 0.75rem;
+  color: var(--secondary-color);
+  margin-top: 0.3rem;
+  font-style: italic;
 }
 
 .system-prompt-notice {
