@@ -153,12 +153,16 @@ export const LoopProvider = ({ children }) => {
   const removeLoop = async (loopId) => {
     try {
       await deleteLoop(loopId);
+      
+      // 루프가 삭제될 때 해당 프롬프트도 삭제
+      loopPromptManager.clearPrompt(loopId);
+      
       setLoops(prevLoops => prevLoops.filter(loop => loop.id !== loopId));
       if (currentLoop && currentLoop.id === loopId) {
         setCurrentLoop(null);
         setLastLoadedLoopId(null);
         
-        // Cleanup any existing interval
+        // 폴링 중지
         if (updateInterval) {
           clearInterval(updateInterval);
           setUpdateInterval(null);
@@ -274,41 +278,61 @@ export const LoopProvider = ({ children }) => {
       setLoading(false);
     }
   };
-
-  const startLoopWithPrompt = async (loopId, initialPrompt) => {
-    setLoading(true);
-    try {
-      const result = await startLoop(loopId, initialPrompt);
-      if (result && result.loop) {
-        // Update currentLoop
-        if (currentLoop && currentLoop.id === loopId) {
-          setCurrentLoop(result.loop);
-          setIsRunning(true);
-        }
-        
-        // Update loop in the list
-        if (loopsLoaded) {
-          setLoops(prevLoops => 
-            prevLoops.map(l => l.id === loopId ? result.loop : l)
-          );
-        }
-        
-        // Set up polling interval to get updates
-        if (!updateInterval) {
-          const intervalId = setInterval(() => {
-            loadLoop(loopId);
-          }, 2000); // Poll every 2 seconds
-          setUpdateInterval(intervalId);
-        }
-      }
-      return result;
-    } catch (error) {
-      console.error('Failed to start loop:', error);
-      return null;
-    } finally {
-      setLoading(false);
+  const loopPromptManager = {
+    // 특정 루프의 프롬프트 저장
+    savePrompt: (loopId, prompt) => {
+      if (!loopId) return;
+      localStorage.setItem(`loop_prompt_${loopId}`, prompt || '');
+    },
+    
+    // 특정 루프의 프롬프트 로드
+    loadPrompt: (loopId) => {
+      if (!loopId) return '';
+      return localStorage.getItem(`loop_prompt_${loopId}`) || '';
+    },
+    
+    // 특정 루프의 프롬프트 삭제
+    clearPrompt: (loopId) => {
+      if (!loopId) return;
+      localStorage.removeItem(`loop_prompt_${loopId}`);
     }
   };
+
+  const startLoopWithPrompt = async (loopId, initialPrompt) => {
+  setLoading(true);
+  try {
+    // 루프 시작 시 프롬프트 저장 (중복 확인)
+    loopPromptManager.savePrompt(loopId, initialPrompt);
+    
+    const result = await startLoop(loopId, initialPrompt);
+    if (result && result.loop) {
+      // 현재 루프 업데이트
+      setCurrentLoop(result.loop);
+      setIsRunning(true);
+      
+      // 루프 목록 업데이트
+      if (loopsLoaded) {
+        setLoops(prevLoops => 
+          prevLoops.map(l => l.id === loopId ? result.loop : l)
+        );
+      }
+      
+      // 폴링 간격 설정
+      if (!updateInterval) {
+        const intervalId = setInterval(() => {
+          loadLoop(loopId);
+        }, 2000);
+        setUpdateInterval(intervalId);
+      }
+    }
+    return result;
+  } catch (error) {
+    console.error('Failed to start loop:', error);
+    return null;
+  } finally {
+    setLoading(false);
+  }
+};
 
   const pauseCurrentLoop = async () => {
     if (!currentLoop) return null;
@@ -386,14 +410,16 @@ export const LoopProvider = ({ children }) => {
         setCurrentLoop(result.loop);
         setIsRunning(false);
         
-        // Update loop in the list
+        // 루프 목록 업데이트
         if (loopsLoaded) {
           setLoops(prevLoops => 
             prevLoops.map(l => l.id === currentLoop.id ? result.loop : l)
           );
         }
         
-        // Clear polling interval
+        // 프롬프트는 유지, 삭제하지 않음
+        
+        // 폴링 간격 제거
         if (updateInterval) {
           clearInterval(updateInterval);
           setUpdateInterval(null);
@@ -418,14 +444,16 @@ export const LoopProvider = ({ children }) => {
         setCurrentLoop(result.loop);
         setIsRunning(false);
         
-        // Update loop in the list
+        // 루프 목록 업데이트
         if (loopsLoaded) {
           setLoops(prevLoops => 
             prevLoops.map(l => l.id === currentLoop.id ? result.loop : l)
           );
         }
         
-        // Clear polling interval if it exists
+        // 프롬프트는 유지됨 (삭제하지 않음)
+        
+        // 폴링 간격 제거
         if (updateInterval) {
           clearInterval(updateInterval);
           setUpdateInterval(null);
@@ -439,7 +467,7 @@ export const LoopProvider = ({ children }) => {
       setLoading(false);
     }
   };
-
+  
   // Cleanup on unmount
   useEffect(() => {
     return () => {
