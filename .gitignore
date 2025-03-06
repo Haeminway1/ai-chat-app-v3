@@ -1,0 +1,3 @@
+__pycache__/
+backend/data/api_keys.json
+frontend/node_modules/
