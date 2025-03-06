@@ -3,10 +3,12 @@ import { Routes, Route, Navigate, useLocation, useNavigate, useParams } from 're
 import './App.css';
 import Layout from './components/Layout';
 import ChatPage from './pages/ChatPage';
+import LoopPage from './pages/LoopPage';
 import SettingsPage from './pages/SettingsPage';
 import ApiKeysPage from './pages/ApiKeysPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ChatProvider } from './contexts/ChatContext';
+import { LoopProvider } from './contexts/LoopContext';
 import { ModelProvider } from './contexts/ModelContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -96,6 +98,19 @@ function AppContent() {
           </ProtectedRoute>
         } />
         
+        {/* Loop routes */}
+        <Route path="loop" element={
+          <ProtectedRoute>
+            <LoopPage />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="loop/:loopId" element={
+          <ProtectedRoute>
+            <LoopPage />
+          </ProtectedRoute>
+        } />
+        
         {/* Settings route */}
         <Route path="settings" element={
           <ProtectedRoute>
@@ -120,7 +135,9 @@ function App() {
         <SettingsProvider>
           <ModelProvider>
             <ChatProvider>
-              <AppContent />
+              <LoopProvider>
+                <AppContent />
+              </LoopProvider>
             </ChatProvider>
           </ModelProvider>
         </SettingsProvider>

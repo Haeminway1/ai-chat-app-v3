@@ -1,0 +1,72 @@
+.participants-list {
+    padding: 1.5rem;
+    background-color: var(--chat-background);
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+  }
+  
+  .participants-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  
+  .participants-list-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+  
+  .add-participant-button {
+    padding: 0.5rem 1rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+  }
+  
+  .add-participant-button:hover {
+    background-color: var(--primary-hover);
+  }
+  
+  .add-participant-button:disabled {
+    background-color: var(--secondary-color);
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+  
+  .participants-container {
+    margin-bottom: 1rem;
+  }
+  
+  .no-participants {
+    padding: 2rem;
+    text-align: center;
+    background-color: var(--background-color);
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    color: var(--secondary-color);
+  }
+  
+  .participants-locked-notice {
+    padding: 0.75rem;
+    background-color: var(--hover-color);
+    border-radius: 4px;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: var(--secondary-color);
+    border-left: 3px solid var(--primary-color);
+  }
+  
+  .participants-help {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background-color: var(--hover-color);
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: var(--secondary-color);
+    border-left: 3px solid var(--secondary-color);
+  }

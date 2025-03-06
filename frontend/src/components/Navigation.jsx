@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import './Navigation.css'; // We'll create this file next
+import './Navigation.css';
 
 const Navigation = () => {
   const navigate = useNavigate();
@@ -19,6 +19,13 @@ const Navigation = () => {
         title="Chat"
       >
         💬
+      </button>
+      <button 
+        className={`nav-button ${currentPath.startsWith('/loop') ? 'active' : ''}`}
+        onClick={() => handleNavigation('/loop')}
+        title="AI Loop"
+      >
+        🔄
       </button>
       <button 
         className={`nav-button ${currentPath === '/settings' ? 'active' : ''}`}

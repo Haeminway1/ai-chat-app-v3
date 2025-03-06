@@ -1,0 +1,83 @@
+.loop-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .loop-item {
+    padding: 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border: 1px solid transparent;
+  }
+  
+  .loop-item:hover {
+    background-color: var(--hover-color);
+  }
+  
+  .loop-item.active {
+    background-color: var(--hover-color);
+    border-color: var(--primary-color);
+  }
+  
+  .loop-item.running {
+    border-left: 3px solid var(--success-color);
+  }
+  
+  .loop-title {
+    font-weight: 500;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .loop-status-badge {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 10px;
+    background-color: var(--success-color);
+    color: white;
+    margin-left: 0.5rem;
+  }
+  
+  .loop-status-badge.paused {
+    background-color: var(--secondary-color);
+  }
+  
+  .loop-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: var(--secondary-color);
+  }
+  
+  .participant-count {
+    font-size: 0.75rem;
+  }
+  
+  .delete-loop-button {
+    background: none;
+    border: none;
+    color: var(--secondary-color);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0 0.25rem;
+    opacity: 0.5;
+  }
+  
+  .delete-loop-button:hover {
+    opacity: 1;
+    color: var(--error-color);
+  }
+  
+  .loop-list-loading, .no-loops {
+    padding: 1rem;
+    text-align: center;
+    color: var(--secondary-color);
+  }

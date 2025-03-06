@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useChat } from '../contexts/ChatContext';
+import { useLoop } from '../contexts/LoopContext';
 import { useModel } from '../contexts/ModelContext';
 import { useSettings } from '../contexts/SettingsContext';
 import ChatList from './chat/ChatList';
+import LoopList from './loop/LoopList';
 import './Sidebar.css';
 
 const ModelParameters = ({ currentModel, modelConfig, onUpdateParameters, onSwitchModel }) => {
@@ -135,7 +137,9 @@ const ModelParameters = ({ currentModel, modelConfig, onUpdateParameters, onSwit
 const Sidebar = ({ onToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const currentView = location.pathname.split('/')[1]; // Gets 'chat' or 'loop' from path
   const { createNewChat, updateChatModel } = useChat();
+  const { createNewLoop } = useLoop();
   const { currentModel, modelConfigs, updateParameters, switchModel } = useModel();
   const [collapsed, setCollapsed] = useState(false);
   const [showParams, setShowParams] = useState(false);
@@ -144,6 +148,13 @@ const Sidebar = ({ onToggle }) => {
     const newChat = await createNewChat("New Chat");
     if (newChat) {
       navigate(`/chat/${newChat.id}`);
+    }
+  };
+  
+  const handleNewLoop = async () => {
+    const newLoop = await createNewLoop("New Loop");
+    if (newLoop) {
+      navigate(`/loop/${newLoop.id}`);
     }
   };
 
@@ -187,11 +198,28 @@ const Sidebar = ({ onToggle }) => {
       </div>
       
       {!collapsed && (
+        <div className="sidebar-tabs">
+          <button 
+            className={`sidebar-tab ${currentView === 'chat' ? 'active' : ''}`}
+            onClick={() => navigate('/chat')}
+          >
+            Chats
+          </button>
+          <button 
+            className={`sidebar-tab ${currentView === 'loop' ? 'active' : ''}`}
+            onClick={() => navigate('/loop')}
+          >
+            Loops
+          </button>
+        </div>
+      )}
+      
+      {!collapsed && (
         <button 
           className="new-chat-button primary-button"
-          onClick={handleNewChat}
+          onClick={currentView === 'loop' ? handleNewLoop : handleNewChat}
         >
-          New Chat
+          {currentView === 'loop' ? 'New Loop' : 'New Chat'}
         </button>
       )}
       
@@ -218,7 +246,7 @@ const Sidebar = ({ onToggle }) => {
       </div>
       
       <div className="chats-container">
-        <ChatList />
+        {currentView === 'loop' ? <LoopList /> : <ChatList />}
       </div>
     </div>
   );

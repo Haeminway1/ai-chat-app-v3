@@ -1,0 +1,22 @@
+.loop-message-list {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    overflow-y: auto;
+    height: 100%;
+  }
+  
+  .empty-loop-messages {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    text-align: center;
+    color: var(--secondary-color);
+    background-color: var(--background-color);
+    border-radius: 8px;
+    margin: 2rem auto;
+    max-width: 80%;
+    font-style: italic;
+  }

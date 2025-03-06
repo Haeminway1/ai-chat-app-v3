@@ -55,6 +55,37 @@
   padding: 0.25rem;
 }
 
+.sidebar-tabs {
+  display: flex;
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-tab {
+  flex: 1;
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--secondary-color);
+  transition: all 0.2s ease;
+}
+
+.sidebar-tab.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+}
+
+.sidebar-tab:hover:not(.active) {
+  background-color: var(--hover-color);
+}
+
+.sidebar.collapsed .sidebar-tabs {
+  display: none;
+}
+
 .new-chat-button {
   width: calc(100% - 2rem);
   margin: 0.5rem 1rem;
