@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLoop } from '../contexts/LoopContext';
+import { useModel } from '../contexts/ModelContext';
+import { useSettings } from '../contexts/SettingsContext';
 import LoopHeader from '../components/loop/LoopHeader';
 import ParticipantsList from '../components/loop/ParticipantsList';
 import LoopControls from '../components/loop/LoopControls';
 import LoopMessageList from '../components/loop/LoopMessageList';
+import LoopParametersPanel from '../components/loop/LoopParametersPanel';
 import './LoopPage.css';
 
 const LoopPage = () => {
@@ -22,10 +25,14 @@ const LoopPage = () => {
     stopCurrentLoop,
     resetCurrentLoop
   } = useLoop();
+  
+  const { currentModel, modelConfigs } = useModel();
+  const { systemPrompts } = useSettings();
 
   const [loadFailed, setLoadFailed] = useState(false);
   const [loadTried, setLoadTried] = useState(false);
-  const [view, setView] = useState('setup'); // 'setup' or 'chat'
+  const [view, setView] = useState('chat'); // 'setup' or 'chat'
+  const [modelParams, setModelParams] = useState(null);
   
   // Effect to handle loop loading - only load existing loops, don't auto-create
   useEffect(() => {
@@ -40,10 +47,11 @@ const LoopPage = () => {
             if (!result) {
               setLoadFailed(true);
             } else {
-              // If loop is running or has messages, switch to chat view
-              if (result.status === 'running' || result.status === 'paused' || 
-                 (result.messages && result.messages.length > 0)) {
+              // 이미 메시지가 있으면 채팅 뷰로 이동, 없으면 설정 뷰로 이동
+              if (result.messages && result.messages.length > 0) {
                 setView('chat');
+              } else {
+                setView('setup');
               }
             }
           })
@@ -54,18 +62,23 @@ const LoopPage = () => {
     }
   }, [loopId, loadLoop, loadTried, currentLoop]);
 
-  // Effect to set the right view based on loop state
+  // 실시간 채팅 메시지 업데이트를 위한 폴링 (루프가 실행 중일 때)
   useEffect(() => {
-    if (currentLoop) {
-      if (currentLoop.status === 'running' || currentLoop.status === 'paused' || 
-         (currentLoop.messages && currentLoop.messages.length > 0)) {
-        setView('chat');
-      } else if (view === 'chat' && currentLoop.status === 'stopped' && 
-                (!currentLoop.messages || currentLoop.messages.length === 0)) {
-        setView('setup');
-      }
+    let pollInterval = null;
+    
+    if (currentLoop?.status === 'running' && loopId) {
+      // 2초마다 루프 정보 새로 가져오기
+      pollInterval = setInterval(() => {
+        loadLoop(loopId);
+      }, 2000);
     }
-  }, [currentLoop, view]);
+    
+    return () => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+    };
+  }, [currentLoop?.status, loopId, loadLoop]);
 
   // Handle creation of a new loop
   const handleCreateNewLoop = () => {
@@ -101,6 +114,18 @@ const LoopPage = () => {
 
   const handleResetLoop = () => {
     resetCurrentLoop();
+    // 루프를 리셋한 후 setup 뷰로 이동
+    setView('setup');
+  };
+  
+  // 설정 버튼 클릭 처리
+  const handleSettingsClick = () => {
+    navigate('/settings', { state: { from: `/loop/${loopId}` } });
+  };
+  
+  // 모델 파라미터 변경 처리
+  const handleModelParamsChange = (params) => {
+    setModelParams(params);
   };
 
   // Show loading state if trying to load a loop
@@ -157,31 +182,40 @@ const LoopPage = () => {
       <div className="loop-container">
         <LoopHeader 
           loop={currentLoop} 
-          onTitleChange={handleUpdateLoopTitle} 
+          onTitleChange={handleUpdateLoopTitle}
+          onSettingsClick={handleSettingsClick}
         />
         
-        {/* View toggle button */}
-        {(currentLoop.status === 'running' || currentLoop.status === 'paused' || 
-          (currentLoop.messages && currentLoop.messages.length > 0)) && (
-          <div className="view-toggle">
-            <button 
-              className={`view-toggle-button ${view === 'setup' ? 'active' : ''}`} 
-              onClick={() => setView('setup')}
-            >
-              Setup
-            </button>
-            <button 
-              className={`view-toggle-button ${view === 'chat' ? 'active' : ''}`} 
-              onClick={() => setView('chat')}
-            >
-              Messages
-            </button>
-          </div>
-        )}
+        {/* 항상 뷰 토글 버튼 표시 */}
+        <div className="view-toggle">
+          <button 
+            className={`view-toggle-button ${view === 'setup' ? 'active' : ''}`} 
+            onClick={() => setView('setup')}
+          >
+            Setup
+          </button>
+          <button 
+            className={`view-toggle-button ${view === 'chat' ? 'active' : ''}`} 
+            onClick={() => setView('chat')}
+          >
+            Messages
+          </button>
+        </div>
         
         {view === 'setup' ? (
           <div className="loop-setup">
-            <ParticipantsList loopId={currentLoop.id} />
+            <ParticipantsList 
+              loopId={currentLoop.id} 
+              systemPrompts={systemPrompts}
+            />
+            
+            {/* 모델 파라미터 패널 */}
+            <LoopParametersPanel 
+              currentModel={currentModel}
+              modelConfigs={modelConfigs}
+              onModelParametersChange={handleModelParamsChange}
+            />
+            
             <LoopControls loopId={currentLoop.id} />
           </div>
         ) : (
@@ -222,7 +256,7 @@ const LoopPage = () => {
                     Stop
                   </button>
                 )}
-                {currentLoop.status === 'stopped' && (
+                {currentLoop.status === 'stopped' && currentLoop.messages && currentLoop.messages.length > 0 && (
                   <button 
                     className="compact-button reset"
                     onClick={handleResetLoop}

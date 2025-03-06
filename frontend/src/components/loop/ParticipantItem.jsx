@@ -3,10 +3,9 @@ import { useModel } from '../../contexts/ModelContext';
 import { useSettings } from '../../contexts/SettingsContext';
 import './ParticipantItem.css';
 
-// Simplified version without react-beautiful-dnd dependency
-const ParticipantItem = ({ participant, index, loopId, onUpdate, onRemove, onMoveUp, onMoveDown }) => {
+// 개선된 버전
+const ParticipantItem = ({ participant, index, loopId, onUpdate, onRemove, onMoveUp, onMoveDown, systemPrompts }) => {
   const { modelConfigs } = useModel();
-  const { systemPrompts } = useSettings();
   
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -251,6 +250,13 @@ const ParticipantItem = ({ participant, index, loopId, onUpdate, onRemove, onMov
                     placeholder="Enter a custom system prompt for this participant..."
                     rows={4}
                   />
+                </div>
+              )}
+              
+              {selectedPrompt !== 'none' && selectedPrompt !== 'custom' && (
+                <div className="prompt-preview">
+                  <div className="prompt-preview-label">Selected prompt preview:</div>
+                  <div className="prompt-preview-content">{systemPrompts[selectedPrompt]}</div>
                 </div>
               )}
             </div>

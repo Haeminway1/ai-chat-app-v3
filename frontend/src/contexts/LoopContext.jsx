@@ -81,6 +81,18 @@ export const LoopProvider = ({ children }) => {
         
         // Set isRunning based on loop status
         setIsRunning(loop.status === 'running');
+        
+        // Set up polling if loop is running
+        if (loop.status === 'running' && !updateInterval) {
+          const intervalId = setInterval(() => {
+            getLoop(loopId).then(updatedLoop => {
+              if (updatedLoop) {
+                setCurrentLoop(updatedLoop);
+              }
+            });
+          }, 2000); // Poll every 2 seconds
+          setUpdateInterval(intervalId);
+        }
       }
       return loop;
     } catch (error) {
@@ -89,7 +101,7 @@ export const LoopProvider = ({ children }) => {
     } finally {
       setLoadingLoop(false);
     }
-  }, [currentLoop, lastLoadedLoopId, loops, loopsLoaded]);
+  }, [currentLoop, lastLoadedLoopId, loops, loopsLoaded, updateInterval]);
 
   const createNewLoop = async (title) => {
     setLoading(true);
@@ -159,7 +171,7 @@ export const LoopProvider = ({ children }) => {
     }
   };
 
-  const addNewParticipant = async (loopId, model, systemPrompt, displayName) => {
+  const addNewParticipant = async (loopId, model, systemPrompt = '', displayName = null) => {
     setLoading(true);
     try {
       const result = await addParticipant(loopId, model, systemPrompt, displayName);
@@ -473,3 +485,5 @@ export const LoopProvider = ({ children }) => {
     </LoopContext.Provider>
   );
 };
+
+export default LoopProvider;

@@ -9,10 +9,12 @@ const LoopMessageList = ({ loop }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // 메시지가 변경될 때마다 스크롤
   useEffect(() => {
     scrollToBottom();
   }, [loop?.messages]);
 
+  // 채팅 로그가 없는 경우 (채팅 로그가 없거나 loop가 없는 경우)
   if (!loop?.messages || loop.messages.length === 0) {
     return (
       <div className="empty-loop-messages">
