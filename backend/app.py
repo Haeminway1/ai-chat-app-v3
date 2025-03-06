@@ -11,6 +11,7 @@ from routes.chat_routes import chat_bp
 from routes.model_routes import model_bp
 from routes.settings_routes import settings_bp
 from routes.auth_routes import auth_bp
+from routes.loop_routes import loop_bp  # Import the new loop blueprint
 
 def create_app():
     """Create and configure Flask application"""
@@ -19,6 +20,7 @@ def create_app():
     # Configure app with environment variables
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
     app.config['CHAT_HISTORY_DIR'] = os.environ.get('CHAT_HISTORY_DIR', 'data/chats')
+    app.config['LOOP_HISTORY_DIR'] = os.environ.get('LOOP_HISTORY_DIR', 'data/loops')
     
     # Enable CORS with proper configuration
     CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -28,6 +30,7 @@ def create_app():
     app.register_blueprint(chat_bp, url_prefix='/api/chat')
     app.register_blueprint(model_bp, url_prefix='/api/models')
     app.register_blueprint(settings_bp, url_prefix='/api/settings')
+    app.register_blueprint(loop_bp, url_prefix='/api/loop')  # Register the loop blueprint
     
     # Health check route
     @app.route('/api/health')
