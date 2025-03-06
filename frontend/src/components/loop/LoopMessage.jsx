@@ -108,29 +108,21 @@ const LoopMessage = ({ message, participantInfo }) => {
     return firstLine.length > 20 ? firstLine.substring(0, 20) + '...' : firstLine;
   };
   
+  const model = getSenderModel();
+  
   return (
     <div className={`loop-message ${getMessageClass()}`}>
       <div className="loop-message-header">
         <div className="loop-message-sender">
           {getSenderName()}
-          {hasSystemPrompt && (
-            <span className="system-prompt-preview" onClick={toggleSystemPrompt}>
-              ({getSystemPromptPreview()})
-            </span>
-          )}
         </div>
-        {getSenderModel() && (
-          <div className="loop-message-model">
-            {getSenderModel()}
-            {hasSystemPrompt && (
-              <button 
-                className="system-prompt-toggle"
-                onClick={toggleSystemPrompt}
-                title="Show/hide system prompt"
-              >
-                {showSystemPrompt ? '−' : '+'}
-              </button>
-            )}
+        {model && (
+          <div 
+            className="loop-message-model" 
+            onClick={hasSystemPrompt ? toggleSystemPrompt : undefined}
+            style={hasSystemPrompt ? {cursor: 'pointer'} : {}}
+          >
+            {model}
           </div>
         )}
       </div>
