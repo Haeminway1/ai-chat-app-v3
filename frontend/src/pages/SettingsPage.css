@@ -323,6 +323,25 @@
   background-color: #1e293b;
   border-bottom: 1px solid #334155;
 }
+
+.blackmyth-preview {
+  background-color: #111111;
+  border: 1px solid #4D4231;
+  background-image: url('../assets/blackmyth-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.blackmyth-preview:after {
+  content: "";
+  height: 40px;
+  background-color: rgba(20, 20, 20, 0.8);
+  border-bottom: 1px solid rgba(77, 66, 49, 0.5);
+  backdrop-filter: blur(5px);
+  position: relative;
+}
+
 /* 프롬프트 목록 스타일 */
 .prompts-list {
   margin-bottom: 2rem;

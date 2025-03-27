@@ -3,10 +3,10 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
-  padding-bottom: 16px;
+  padding: 16px 24px;
   border-bottom: 1px solid #e2e8f0;
   width: 100%;
-  min-width: 1000px;
+  box-sizing: border-box;
 }
 
 .loop-title-container {
@@ -30,6 +30,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 500px;
 }
 
 .loop-title:focus {
@@ -122,4 +123,50 @@
     width: 100%;
     justify-content: flex-end;
   }
+}
+
+/* Black Myth Theme Styles */
+[data-theme='blackmyth'] .loop-header {
+  border-bottom: 1px solid rgba(77, 66, 49, 0.5);
+  background-color: rgba(20, 20, 20, 0.4);
+  backdrop-filter: blur(5px);
+  border-radius: 8px 8px 0 0;
+}
+
+[data-theme='blackmyth'] .loop-title {
+  color: #f1e9d9;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme='blackmyth'] .loop-icon {
+  color: #B28045;
+}
+
+[data-theme='blackmyth'] .loop-title-editable {
+  color: #f1e9d9;
+  background-color: rgba(20, 20, 20, 0.7);
+  border: 1px solid rgba(77, 66, 49, 0.5);
+}
+
+[data-theme='blackmyth'] .loop-title-editable:focus {
+  background-color: rgba(30, 30, 30, 0.8);
+  border-color: #B28045;
+  outline: none;
+}
+
+[data-theme='blackmyth'] .save-button {
+  background-color: #B28045;
+}
+
+[data-theme='blackmyth'] .save-button:hover {
+  background-color: #C99961;
+}
+
+[data-theme='blackmyth'] .loop-actions-button {
+  color: #d7cfc4;
+}
+
+[data-theme='blackmyth'] .loop-actions-button:hover {
+  background-color: rgba(77, 66, 49, 0.5);
+  color: #f1e9d9;
 }

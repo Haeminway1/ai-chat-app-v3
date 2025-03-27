@@ -1,0 +1,10 @@
+/* 
+ * This file provides a fallback background for the Black Myth theme 
+ * if the jpg image is not available
+ */
+
+.blackmyth-background-fallback {
+  background: linear-gradient(135deg, #111111 0%, #2b1d0e 50%, #453119 100%);
+}
+
+/* Import this CSS and apply this class as a backup if the image fails to load */ 

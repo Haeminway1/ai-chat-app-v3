@@ -1,5 +1,5 @@
 current_img_model: gpt-4o
-current_model: gpt-4o
+current_model: claude-3-5-haiku-latest
 json_mode: false
 models:
   claude-3-5-haiku-latest:

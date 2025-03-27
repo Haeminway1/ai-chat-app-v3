@@ -33,6 +33,10 @@
   transition: background-color 0.3s ease;
 }
 
+[data-theme='blackmyth'] .content {
+  background-color: transparent;
+}
+
 @media (max-width: 768px) {
   .app-layout {
     flex-direction: column;

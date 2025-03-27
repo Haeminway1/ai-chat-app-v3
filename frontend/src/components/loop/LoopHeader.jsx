@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiSettings, FiRefreshCw } from 'react-icons/fi';
 import { useLoop } from '../../contexts/LoopContext';
 import './LoopHeader.css';
 
@@ -56,7 +55,6 @@ const LoopHeader = () => {
   return (
     <div className="loop-header">
       <div className="loop-title-container">
-        <FiRefreshCw className="loop-icon" />
         {isEditing ? (
           <>
             <input
@@ -84,12 +82,6 @@ const LoopHeader = () => {
             {title || 'Untitled Loop'}
           </h1>
         )}
-      </div>
-      
-      <div className="loop-controls-container">
-        <button className="loop-actions-button">
-          <FiSettings />
-        </button>
       </div>
     </div>
   );

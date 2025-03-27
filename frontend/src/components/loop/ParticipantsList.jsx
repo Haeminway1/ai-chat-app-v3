@@ -1,61 +1,64 @@
-import React from 'react';
-import { FaPlus } from 'react-icons/fa';
+import React, { useState } from 'react';
 import { useLoop } from '../../contexts/LoopContext';
-import ParticipantItem from './ParticipantItem';
+import Participant from './Participant';
+import { FiPlus, FiInfo } from 'react-icons/fi';
 import './ParticipantsList.css';
 
 const ParticipantsList = () => {
-  const { 
-    currentLoop, 
-    addParticipant, 
-    moveParticipantUp, 
-    moveParticipantDown, 
-    updateParticipant, 
-    removeParticipant,
-    isLoopRunning,
-    isLoopPaused
-  } = useLoop();
+  const { currentLoop, addParticipant } = useLoop();
+  const [expandedParticipant, setExpandedParticipant] = useState(null);
 
   const handleAddParticipant = () => {
-    addParticipant();
+    const participantCount = currentLoop?.participants?.length || 0;
+    addParticipant({
+      name: `Participant ${participantCount + 1}`,
+      model: "gpt-4o",
+      role: "assistant",
+      systemPrompt: "",
+      temperature: 0.7,
+      maxTokens: 4000
+    });
   };
 
-  const isParticipantsEditable = !isLoopRunning && !isLoopPaused;
+  const toggleExpand = (id) => {
+    setExpandedParticipant(expandedParticipant === id ? null : id);
+  };
+
+  if (!currentLoop) return null;
 
   return (
-    <div className="participants-list">
+    <div className={`participants-list ${expandedParticipant ? 'with-expanded' : ''}`}>
       <div className="participants-header">
-        <h3 className="participants-title">Participants</h3>
+        <h2 className="participants-title">Participants</h2>
         <button 
-          className="add-participant-button" 
+          className="add-participant-button"
           onClick={handleAddParticipant}
-          disabled={!isParticipantsEditable}
         >
-          <FaPlus /> Add Participant
+          <FiPlus /> Add Participant
         </button>
       </div>
-
-      {(!currentLoop?.participants || currentLoop.participants.length === 0) ? (
-        <div className="participants-empty">
-          <p>No participants added yet. Start by adding a participant to your loop.</p>
-        </div>
-      ) : (
+      
+      {currentLoop.participants && currentLoop.participants.length > 0 ? (
         <div className="participants-items">
           {currentLoop.participants.map((participant, index) => (
-            <ParticipantItem
-              key={participant.id}
+            <Participant 
+              key={participant.id || index}
               participant={participant}
               index={index}
-              isFirst={index === 0}
-              isLast={index === currentLoop.participants.length - 1}
-              onMoveUp={() => moveParticipantUp(index)}
-              onMoveDown={() => moveParticipantDown(index)}
-              onUpdate={(updatedParticipant) => updateParticipant(index, updatedParticipant)}
-              onRemove={() => removeParticipant(index)}
-              isEditable={isParticipantsEditable}
-              totalParticipants={currentLoop.participants.length}
+              isExpanded={expandedParticipant === participant.id}
+              onToggleExpand={() => toggleExpand(participant.id)}
             />
           ))}
+        </div>
+      ) : (
+        <div className="participants-empty">
+          <p>No participants added yet. Add at least one participant to start the loop.</p>
+          <button 
+            className="add-participant-button"
+            onClick={handleAddParticipant}
+          >
+            <FiPlus /> Add Your First Participant
+          </button>
         </div>
       )}
     </div>

@@ -21,6 +21,12 @@
   pointer-events: auto; /* Re-enable pointer events for the buttons */
 }
 
+[data-theme='blackmyth'] .nav-container {
+  background-color: rgba(20, 20, 20, 0.7);
+  border: 1px solid rgba(77, 66, 49, 0.5);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
 .nav-button {
   display: flex;
   align-items: center;
@@ -36,15 +42,29 @@
   transition: all 0.2s ease;
 }
 
+[data-theme='blackmyth'] .nav-button {
+  color: #f1e9d9;
+  letter-spacing: 0.5px;
+}
+
 .nav-button:hover {
   background-color: rgba(var(--hover-color-rgb), 0.7);
   transform: translateY(-2px);
+}
+
+[data-theme='blackmyth'] .nav-button:hover {
+  background-color: rgba(42, 38, 32, 0.8);
 }
 
 .nav-button.active {
   background-color: var(--primary-color);
   color: white;
   box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.3);
+}
+
+[data-theme='blackmyth'] .nav-button.active {
+  background-color: #B28045;
+  box-shadow: 0 2px 8px rgba(178, 128, 69, 0.4);
 }
 
 .nav-icon {

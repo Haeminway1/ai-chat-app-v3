@@ -6,7 +6,6 @@
   background-color: var(--bg-color);
   position: relative;
   width: 100%;
-  min-width: 900px;
 }
 
 /* Resize handle styling */
@@ -37,7 +36,6 @@
 
 .message-input {
   width: 100%;
-  min-width: 860px;
   min-height: 60px;
   max-height: 200px;
   padding: 1rem;
@@ -53,9 +51,21 @@
   overflow-y: auto;
 }
 
+[data-theme='blackmyth'] .message-input {
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(77, 66, 49, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  color: #f1e9d9;
+}
+
 .message-input:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 2px var(--primary-color-transparent);
+}
+
+[data-theme='blackmyth'] .message-input:focus {
+  border-color: #B28045;
+  box-shadow: 0 0 0 2px rgba(178, 128, 69, 0.3);
 }
 
 .message-input:disabled {

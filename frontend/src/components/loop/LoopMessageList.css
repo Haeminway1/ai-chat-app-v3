@@ -3,13 +3,13 @@
     flex-direction: column;
     gap: 16px;
     width: 100%;
-    min-width: 1000px;
-    padding: 8px 0;
+    padding: 16px;
     overflow-y: auto;
     height: 100%;
     position: relative;
     scrollbar-width: thin;
     scrollbar-color: #94a3b8 transparent;
+    box-sizing: border-box;
   }
   
   .empty-loop-messages {
@@ -21,9 +21,10 @@
     text-align: center;
     color: #94a3b8;
     width: 100%;
-    min-width: 1000px;
     height: 100%;
     position: relative;
+    max-width: 800px;
+    margin: 0 auto;
   }
 
   .empty-loop-messages p {
@@ -122,4 +123,31 @@
 
   .loop-message-list::-webkit-scrollbar-thumb:hover {
     background-color: rgba(148, 163, 184, 0.5);
+  }
+
+  /* Black Myth Theme Styles */
+  [data-theme='blackmyth'] .loop-message-list::-webkit-scrollbar-thumb {
+    background-color: rgba(178, 128, 69, 0.4);
+  }
+
+  [data-theme='blackmyth'] .loop-message-list::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(178, 128, 69, 0.6);
+  }
+  
+  [data-theme='blackmyth'] .empty-loop-messages {
+    color: #d7cfc4;
+  }
+  
+  [data-theme='blackmyth'] .scroll-helper {
+    background-color: #B28045;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+  
+  [data-theme='blackmyth'] .scroll-helper:hover {
+    background-color: #C99961;
+  }
+  
+  [data-theme='blackmyth'] .scroll-helper-content {
+    background-color: #B28045;
+    border: 1px solid rgba(178, 128, 69, 0.3);
   }

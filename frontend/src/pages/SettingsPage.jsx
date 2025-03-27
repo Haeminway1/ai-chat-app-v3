@@ -463,17 +463,21 @@ const SettingsPage = ({ returnPath }) => {
                   <span>Dark</span>
                 </button>
                 <button 
-                  className={`theme-button ${theme === 'system' ? 'active' : ''}`}
-                  onClick={() => setTheme('system')}
+                  className={`theme-button ${theme === 'blackmyth' ? 'active' : ''}`}
+                  onClick={() => setTheme('blackmyth')}
                 >
-                  <span className="theme-icon">💻</span>
-                  <span>System</span>
+                  <span className="theme-icon">🐉</span>
+                  <span>Black Myth</span>
                 </button>
               </div>
               
               <div className="theme-preview">
                 <div className="preview-label">Preview:</div>
-                <div className={`preview-box ${theme === 'dark' ? 'dark-preview' : 'light-preview'}`}>
+                <div className={`preview-box ${
+                  theme === 'dark' ? 'dark-preview' : 
+                  theme === 'blackmyth' ? 'blackmyth-preview' : 
+                  'light-preview'
+                }`}>
                   <div className="preview-content">
                     Theme preview
                   </div>

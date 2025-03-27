@@ -5,7 +5,7 @@
   padding: 24px;
   margin-bottom: 24px;
   width: 100%;
-  min-width: 1000px;
+  box-sizing: border-box;
 }
 
 .start-controls {
@@ -13,6 +13,7 @@
   flex-direction: column;
   gap: 20px;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .initial-prompt-container {
@@ -20,6 +21,7 @@
   flex-direction: column;
   gap: 8px;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .initial-prompt-container label {
@@ -215,4 +217,41 @@
     width: 100%;
     justify-content: space-between;
   }
+}
+
+/* Add Black Myth theme styling for loop controls */
+[data-theme='blackmyth'] .loop-controls {
+  background-color: rgba(20, 20, 20, 0.7);
+  border: 1px solid rgba(77, 66, 49, 0.5);
+  backdrop-filter: blur(5px);
+}
+
+[data-theme='blackmyth'] .initial-prompt-input {
+  background-color: rgba(20, 20, 20, 0.7);
+  color: #f1e9d9;
+  border-color: rgba(77, 66, 49, 0.8);
+  backdrop-filter: blur(5px);
+}
+
+[data-theme='blackmyth'] .start-button,
+[data-theme='blackmyth'] .resume-button {
+  background-color: #B28045;
+}
+
+[data-theme='blackmyth'] .start-button:hover,
+[data-theme='blackmyth'] .resume-button:hover {
+  background-color: #C99961;
+}
+
+[data-theme='blackmyth'] .reset-button {
+  background-color: rgba(30, 30, 30, 0.7);
+  color: #d7cfc4;
+  border: 1px solid rgba(77, 66, 49, 0.5);
+  backdrop-filter: blur(5px);
+}
+
+[data-theme='blackmyth'] .reset-button:hover {
+  background-color: rgba(42, 38, 32, 0.8);
+  color: #f1e9d9;
+  border-color: rgba(77, 66, 49, 0.8);
 }

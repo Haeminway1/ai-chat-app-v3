@@ -1,0 +1,109 @@
+.stop-sequence {
+  background-color: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+}
+
+.stop-sequence.expanded {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  height: auto;
+  position: relative;
+  z-index: 10;
+}
+
+.stop-sequence-header {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  cursor: pointer;
+  background-color: #fff;
+  transition: background-color 0.2s ease;
+}
+
+.stop-sequence-header:hover {
+  background-color: #f8fafc;
+}
+
+.stop-sequence-number {
+  width: 32px;
+  height: 32px;
+  background-color: #3b82f6;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  margin-right: 12px;
+}
+
+.stop-sequence-value {
+  flex: 1;
+  font-weight: 500;
+  color: #1e293b;
+  margin-right: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stop-sequence-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.remove-stop-sequence {
+  background: none;
+  border: none;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.remove-stop-sequence:hover {
+  background-color: #fee2e2;
+}
+
+.stop-sequence-details {
+  padding: 20px;
+  border-top: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+}
+
+/* Black Myth Theme overrides */
+[data-theme='blackmyth'] .stop-sequence {
+  background-color: rgba(30, 30, 30, 0.7);
+  border: 1px solid rgba(77, 66, 49, 0.5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme='blackmyth'] .stop-sequence-header {
+  background-color: rgba(30, 30, 30, 0.8);
+}
+
+[data-theme='blackmyth'] .stop-sequence-header:hover {
+  background-color: rgba(40, 40, 40, 0.8);
+}
+
+[data-theme='blackmyth'] .stop-sequence-number {
+  background-color: #B28045;
+}
+
+[data-theme='blackmyth'] .stop-sequence-value {
+  color: #F5F0E5;
+}
+
+[data-theme='blackmyth'] .stop-sequence-details {
+  background-color: rgba(25, 25, 25, 0.7);
+  border-top: 1px solid rgba(77, 66, 49, 0.5);
+} 

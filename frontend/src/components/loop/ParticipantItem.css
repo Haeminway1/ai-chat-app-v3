@@ -175,6 +175,15 @@
   color: #475569;
 }
 
+.form-group label .param-value {
+  font-weight: normal;
+  color: var(--primary-color);
+}
+
+[data-theme='blackmyth'] .form-group label .param-value {
+  color: #B28045;
+}
+
 .form-control {
   padding: 10px;
   border: 1px solid #cbd5e1;
@@ -192,6 +201,12 @@
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
+[data-theme='blackmyth'] .form-control {
+  background-color: rgba(30, 30, 30, 0.7);
+  color: #f1e9d9;
+  border-color: rgba(77, 66, 49, 0.5);
+}
+
 .form-control-select {
   padding: 6px 10px;
   border: 1px solid #cbd5e1;
@@ -203,13 +218,15 @@
 }
 
 .form-control-range {
+  height: 6px;
   width: 100%;
-  height: 5px;
-  -webkit-appearance: none;
   appearance: none;
-  background: #e2e8f0;
+  -webkit-appearance: none;
+  background: var(--border-color);
   border-radius: 5px;
-  margin: 10px 0;
+  outline: none;
+  padding: 0;
+  margin: 0 0 1rem 0;
 }
 
 .form-control-range::-webkit-slider-thumb {
@@ -217,9 +234,19 @@
   appearance: none;
   width: 16px;
   height: 16px;
+  background: var(--primary-color);
   border-radius: 50%;
-  background: #3b82f6;
   cursor: pointer;
+}
+
+[data-theme='blackmyth'] .form-control-range {
+  background-color: rgba(42, 38, 32, 0.5);
+  border: none;
+}
+
+[data-theme='blackmyth'] .form-control-range::-webkit-slider-thumb {
+  background-color: #B28045;
+  border: 2px solid rgba(178, 128, 69, 0.3);
 }
 
 .param-value {
@@ -314,4 +341,112 @@
     order: 3;
     margin-top: 8px;
   }
+}
+
+[data-theme='blackmyth'] .participant-item {
+  background-color: rgba(30, 30, 30, 0.8);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(77, 66, 49, 0.6);
+  backdrop-filter: blur(5px);
+}
+
+[data-theme='blackmyth'] .participant-order {
+  background-color: #B28045;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme='blackmyth'] .participant-header:hover {
+  background-color: rgba(42, 38, 32, 0.5);
+}
+
+[data-theme='blackmyth'] .participant-details {
+  background-color: rgba(20, 20, 20, 0.6);
+  border-top: 1px solid rgba(77, 66, 49, 0.5);
+}
+
+[data-theme='blackmyth'] .move-up-button,
+[data-theme='blackmyth'] .move-down-button {
+  background-color: rgba(42, 38, 32, 0.5);
+  color: #d7cfc4;
+  border: 1px solid rgba(77, 66, 49, 0.5);
+}
+
+[data-theme='blackmyth'] .move-up-button:hover,
+[data-theme='blackmyth'] .move-down-button:hover {
+  background-color: rgba(77, 66, 49, 0.7);
+  color: #f1e9d9;
+}
+
+[data-theme='blackmyth'] .remove-button {
+  background-color: rgba(229, 115, 115, 0.2);
+  color: #e57373;
+  border: 1px solid rgba(229, 115, 115, 0.3);
+}
+
+[data-theme='blackmyth'] .remove-button:hover {
+  background-color: rgba(229, 115, 115, 0.3);
+  color: #f1e9d9;
+}
+
+[data-theme='blackmyth'] .expand-indicator {
+  color: #B28045;
+}
+
+[data-theme='blackmyth'] .prompt-input {
+  background-color: rgba(20, 20, 20, 0.7);
+  color: #f1e9d9;
+  border-color: rgba(77, 66, 49, 0.5);
+}
+
+[data-theme='blackmyth'] .prompt-input:focus {
+  border-color: #B28045;
+  box-shadow: 0 0 0 2px rgba(178, 128, 69, 0.2);
+}
+
+[data-theme='blackmyth'] .save-btn {
+  background-color: #B28045;
+}
+
+[data-theme='blackmyth'] .save-btn:hover {
+  background-color: #C99961;
+}
+
+[data-theme='blackmyth'] .add-placeholder-btn {
+  background-color: rgba(30, 30, 30, 0.7);
+  color: #d7cfc4;
+  border: 1px solid rgba(77, 66, 49, 0.5);
+}
+
+[data-theme='blackmyth'] .add-placeholder-btn:hover {
+  background-color: rgba(42, 38, 32, 0.8);
+  color: #f1e9d9;
+}
+
+[data-theme='blackmyth'] .help-text {
+  color: #BDB19F;
+}
+
+[data-theme='blackmyth'] .participant-name {
+  color: #F5F0E5;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  font-weight: 600;
+}
+
+[data-theme='blackmyth'] .participant-model {
+  background-color: rgba(20, 20, 20, 0.8);
+  color: #e0d5c3;
+  font-weight: 500;
+  border: 1px solid rgba(77, 66, 49, 0.5);
+}
+
+[data-theme='blackmyth'] .form-group label {
+  color: #F5F0E5;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+  font-weight: 600;
+}
+
+[data-theme='blackmyth'] .form-group label .param-value {
+  color: #E3C08D;
+  font-weight: 500;
+  letter-spacing: 0.5px;
 }

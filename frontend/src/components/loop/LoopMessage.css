@@ -14,6 +14,77 @@
   z-index: 1;
 }
 
+/* Black Myth Theme styling for messages */
+[data-theme='blackmyth'] .loop-message {
+  background-color: rgba(30, 30, 30, 0.7);
+  border: 1px solid rgba(77, 66, 49, 0.5);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(5px);
+}
+
+[data-theme='blackmyth'] .message-header {
+  background-color: rgba(20, 20, 20, 0.6);
+  border-bottom: 1px solid rgba(77, 66, 49, 0.3);
+}
+
+[data-theme='blackmyth'] .sender-name {
+  color: #f1e9d9;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme='blackmyth'] .message-sender {
+  color: #d7cfc4;
+}
+
+[data-theme='blackmyth'] .message-content {
+  color: #f1e9d9;
+}
+
+[data-theme='blackmyth'] .message-time {
+  color: rgba(215, 207, 196, 0.7);
+}
+
+[data-theme='blackmyth'] .message-content code {
+  background-color: rgba(42, 38, 32, 0.6);
+  color: #d7cfc4;
+  border: 1px solid rgba(77, 66, 49, 0.3);
+}
+
+[data-theme='blackmyth'] .message-content pre {
+  background-color: rgba(20, 20, 20, 0.7);
+  border: 1px solid rgba(77, 66, 49, 0.5);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+[data-theme='blackmyth'] .message-content blockquote {
+  border-left: 4px solid rgba(77, 66, 49, 0.6);
+  color: #d7cfc4;
+}
+
+[data-theme='blackmyth'] .message-content a {
+  color: #B28045;
+}
+
+[data-theme='blackmyth'] .loop-message-user {
+  background-color: rgba(42, 38, 32, 0.7);
+}
+
+[data-theme='blackmyth'] .loop-message-ai {
+  background-color: rgba(30, 30, 30, 0.7);
+}
+
+[data-theme='blackmyth'] .loop-message-system {
+  background-color: rgba(20, 20, 20, 0.6);
+  color: #d7cfc4;
+}
+
+[data-theme='blackmyth'] .loop-message-model {
+  background-color: rgba(77, 66, 49, 0.4);
+  color: #f1e9d9;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
 .loop-message:last-child {
   margin-bottom: 0;
 }

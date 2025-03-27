@@ -23,7 +23,6 @@ const Navigation = () => {
           onClick={() => navigate('/chat')}
           aria-label="Chat"
         >
-          <span className="nav-icon">💬</span>
           <span className="nav-label">Chat</span>
         </button>
         
@@ -32,7 +31,6 @@ const Navigation = () => {
           onClick={() => navigate('/loop')}
           aria-label="Loop"
         >
-          <span className="nav-icon">🔄</span>
           <span className="nav-label">Loop</span>
         </button>
         
@@ -41,7 +39,6 @@ const Navigation = () => {
           onClick={() => navigate('/settings')}
           aria-label="Settings"
         >
-          <span className="nav-icon">⚙️</span>
           <span className="nav-label">Settings</span>
         </button>
         

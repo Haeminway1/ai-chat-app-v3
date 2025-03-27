@@ -79,16 +79,26 @@ const ModelParameters = ({ currentModel, modelConfig, onUpdateParameters, onSwit
       
       {!isO3Model && (
         <div className="model-parameter">
-          <label>Temperature</label>
-          <input 
-            type="range" 
-            min="0" 
-            max="1" 
-            step="0.1" 
-            value={temperature}
-            onChange={(e) => setTemperature(e.target.value)}
-          />
-          <span>{temperature}</span>
+          <label>Temperature: <span>{temperature}</span></label>
+          <div className="temperature-control">
+            <input 
+              type="range" 
+              min="0" 
+              max="2" 
+              step="0.01" 
+              value={temperature}
+              onChange={(e) => setTemperature(e.target.value)}
+            />
+            <input
+              type="number"
+              min="0"
+              max="2"
+              step="0.01"
+              value={temperature}
+              onChange={(e) => setTemperature(e.target.value)}
+              className="temperature-input"
+            />
+          </div>
         </div>
       )}
       

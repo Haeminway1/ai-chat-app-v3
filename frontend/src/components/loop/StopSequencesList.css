@@ -4,7 +4,23 @@
   background-color: #ffffff;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  min-width: 1000px;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow-x: hidden;
+  transition: all 0.3s ease;
+}
+
+.stop-sequences-list.with-expanded {
+  position: relative;
+  z-index: 20;
+}
+
+[data-theme='blackmyth'] .stop-sequences-list {
+  background-color: rgba(20, 20, 20, 0.7);
+  border: 1px solid rgba(77, 66, 49, 0.5);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(5px);
 }
 
 .stop-sequences-header {
@@ -19,6 +35,11 @@
   font-weight: 600;
   color: #334155;
   margin: 0;
+}
+
+[data-theme='blackmyth'] .stop-sequences-title {
+  color: #f1e9d9;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .add-stop-sequence-button {
@@ -39,9 +60,37 @@
   background-color: #2563eb;
 }
 
+[data-theme='blackmyth'] .add-stop-sequence-button {
+  background-color: #B28045;
+  border: 1px solid rgba(178, 128, 69, 0.2);
+}
+
+[data-theme='blackmyth'] .add-stop-sequence-button:hover {
+  background-color: #C99961;
+}
+
 .add-stop-sequence-button:disabled {
   background-color: #94a3b8;
   cursor: not-allowed;
+}
+
+.stop-sequences-items {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.05);
+  margin-bottom: 20px;
+}
+
+.stop-sequences-list.with-expanded .stop-sequence.expanded {
+  width: calc(100% + 20px);
+  margin-left: -10px;
+  margin-right: -10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
 }
 
 .stop-sequences-empty {
@@ -51,6 +100,12 @@
   background-color: #f8fafc;
   border-radius: 6px;
   margin-bottom: 16px;
+}
+
+[data-theme='blackmyth'] .stop-sequences-empty {
+  background-color: rgba(20, 20, 20, 0.5);
+  border: 1px dashed rgba(77, 66, 49, 0.5);
+  color: #d7cfc4;
 }
 
 .stop-sequences-help {
@@ -63,8 +118,8 @@
   font-size: 14px;
 }
 
-.stop-sequences-items {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-} 
+[data-theme='blackmyth'] .stop-sequences-help {
+  background-color: rgba(20, 20, 20, 0.5);
+  border-left: 3px solid #B28045;
+  color: #d7cfc4;
+}
