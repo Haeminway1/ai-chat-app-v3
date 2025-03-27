@@ -19,7 +19,15 @@ export const useChatScrollManager = ({
   // Scroll to the bottom of the container
   const scrollToBottom = useCallback(() => {
     if (containerRef?.current) {
+      // 즉시 스크롤을 최하단으로 이동
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
+      
+      // 스크롤이 제대로 적용되지 않을 수 있으므로 약간의 지연 후 한번 더 시도
+      setTimeout(() => {
+        if (containerRef?.current) {
+          containerRef.current.scrollTop = containerRef.current.scrollHeight;
+        }
+      }, 50);
     }
   }, [containerRef]);
   
@@ -41,17 +49,23 @@ export const useChatScrollManager = ({
   // Auto-scroll behavior for new messages
   useEffect(() => {
     // If messages have been added and we were previously at the bottom
-    if (messages.length > prevMessageCount && isNearBottom) {
+    // 메시지가 추가되었거나 초기 로드 시 스크롤을 아래로 이동
+    if (messages.length > prevMessageCount || messages.length === 1) {
       scrollToBottom();
     }
     
     setPrevMessageCount(messages.length);
-  }, [messages.length, prevMessageCount, isNearBottom, scrollToBottom]);
+  }, [messages.length, prevMessageCount, scrollToBottom]);
   
   // Initialize scroll position check
   useEffect(() => {
     setIsNearBottom(checkIfNearBottom());
-  }, [checkIfNearBottom]);
+    
+    // 컴포넌트 마운트 시 스크롤을 아래로 이동
+    if (messages.length > 0) {
+      scrollToBottom();
+    }
+  }, [checkIfNearBottom, scrollToBottom, messages.length]);
   
   return {
     isNearBottom,

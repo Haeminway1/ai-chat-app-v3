@@ -60,6 +60,18 @@ const SettingsPage = ({ returnPath }) => {
     setSelectedPrompts(initialPrompts);
   }, [modelConfigs]);
   
+  // 컴포넌트 마운트 시 API 키 상태 로드
+  useEffect(() => {
+    // API 키가 설정되어 있으면 placeholder 대신 '••••••••••••' 표시
+    const initialApiKeys = { ...apiKeys };
+    Object.keys(keyStatus).forEach(key => {
+      if (keyStatus[key]) {
+        initialApiKeys[key] = '••••••••••••'; // 보안을 위해 실제 키 대신 마스킹 처리
+      }
+    });
+    setApiKeys(initialApiKeys);
+  }, [keyStatus]);
+  
   // 모델에 프롬프트 적용 함수
   const handlePromptChange = async (modelType, promptKey) => {
     setSelectedPrompts({

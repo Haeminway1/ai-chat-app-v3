@@ -6,12 +6,10 @@
     min-width: 1000px;
     padding: 8px 0;
     overflow-y: auto;
-    height: auto;
-    min-height: 500px;
-    flex: 1;
+    height: 100%;
+    position: relative;
     scrollbar-width: thin;
     scrollbar-color: #94a3b8 transparent;
-    position: relative; /* For proper positioning */
   }
   
   .empty-loop-messages {
@@ -25,6 +23,7 @@
     width: 100%;
     min-width: 1000px;
     height: 100%;
+    position: relative;
   }
 
   .empty-loop-messages p {

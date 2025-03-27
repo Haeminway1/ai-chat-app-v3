@@ -9,10 +9,10 @@ export const AuthProvider = ({ children }) => {
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [keyStatus, setKeyStatus] = useState({
-    openai: false,
-    anthropic: false,
-    google: false,
-    xai: false
+    OPENAI_API_KEY: false,
+    ANTHROPIC_API_KEY: false,
+    GENAI_API_KEY: false,
+    XAI_API_KEY: false
   });
 
   const checkAuthentication = async () => {

@@ -8,8 +8,14 @@
   transition: all 0.2s ease;
   width: 100%;
   max-width: 100%;
+  animation: fade-in 0.3s ease;
   flex-shrink: 0;
-  animation: none;
+  position: relative;
+  z-index: 1;
+}
+
+.loop-message:last-child {
+  margin-bottom: 0;
 }
 
 .loop-message.collapsed {
@@ -330,10 +336,6 @@
   100% {
     box-shadow: 0 0 0 rgba(0, 123, 255, 0);
   }
-}
-
-.loop-message:last-child {
-  transition: background-color 0.3s ease;
 }
 
 .new-message-highlight .loop-message:last-child {

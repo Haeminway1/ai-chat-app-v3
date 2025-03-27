@@ -14,7 +14,7 @@ export const getApiKeys = async () => {
     return await api.get('/auth/keys');
   } catch (error) {
     console.error('Failed to get API keys status:', error);
-    return { openai: false, anthropic: false, google: false };
+    return { OPENAI_API_KEY: false, ANTHROPIC_API_KEY: false, GENAI_API_KEY: false, XAI_API_KEY: false };
   }
 };
 

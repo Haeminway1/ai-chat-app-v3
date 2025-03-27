@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useChat } from '../contexts/ChatContext';
+import { useModel } from '../contexts/ModelContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { useChatScrollManager } from '../hooks/useChatScrollManager';
 import MessageList from '../components/chat/MessageList';
 import MessageInput from '../components/chat/MessageInput';
@@ -19,8 +21,13 @@ const ChatPage = () => {
     loadChat, 
     createNewChat, 
     updateChatName,
-    loading 
+    updateSystemMessage,
+    loading,
+    isTyping 
   } = useChat();
+  
+  const { modelConfigs } = useModel();
+  const { systemPrompts } = useSettings();
   
   const [loadFailed, setLoadFailed] = useState(false);
   const [loadTried, setLoadTried] = useState(false);
@@ -79,10 +86,38 @@ const ChatPage = () => {
 
   // Scroll handling for new messages
   useEffect(() => {
-    if (isNearBottom && currentChat?.messages?.length > 0) {
-      scrollToBottom();
+    const scrollDown = () => {
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      }
+    };
+    
+    if (currentChat?.messages?.length > 0) {
+      scrollDown();
+      // 약간의 지연 후 한번 더 시도
+      setTimeout(() => {
+        scrollDown();
+      }, 200);
     }
-  }, [currentChat?.messages?.length, isNearBottom, scrollToBottom]);
+  }, [currentChat?.messages?.length]);
+
+  // 컴포넌트가 마운트될 때와 메시지가 업데이트될 때 스크롤 처리
+  useLayoutEffect(() => {
+    if (messagesContainerRef.current && currentChat?.messages?.length > 0) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  }, [currentChat?.messages]);
+
+  // 약간의 지연 후 한번 더 스크롤 처리 (DOM이 완전히 렌더링된 후)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (messagesContainerRef.current && currentChat?.messages?.length > 0) {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      }
+    }, 200);
+    
+    return () => clearTimeout(timer);
+  }, [currentChat?.messages]);
 
   // Handle creation of a new chat
   const handleCreateNewChat = () => {
@@ -96,6 +131,12 @@ const ChatPage = () => {
   const handleUpdateChatTitle = async (newTitle) => {
     if (currentChat) {
       await updateChatName(currentChat.id, newTitle);
+    }
+  };
+
+  const handleUpdateSystemMessage = async (content) => {
+    if (currentChat) {
+      await updateSystemMessage(currentChat.id, content);
     }
   };
 
@@ -160,8 +201,10 @@ const ChatPage = () => {
         />
         
         <SystemMessageEditor 
-          chatId={currentChat.id}
-          initialMessage={currentChat.systemMessage || ''}
+          chat={currentChat}
+          modelConfig={modelConfigs[currentChat.model]}
+          systemPrompts={systemPrompts}
+          onUpdateSystemMessage={handleUpdateSystemMessage}
         />
         
         <div 
@@ -172,6 +215,7 @@ const ChatPage = () => {
           <MessageList 
             messages={currentChat.messages || []} 
             chatId={currentChat.id}
+            isTyping={isTyping}
           />
         </div>
         
