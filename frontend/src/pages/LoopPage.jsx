@@ -5,9 +5,13 @@ import { useModel } from '../contexts/ModelContext';
 import { useSettings } from '../contexts/SettingsContext';
 import LoopHeader from '../components/loop/LoopHeader';
 import ParticipantsList from '../components/loop/ParticipantsList';
+import StopSequencesList from '../components/loop/StopSequencesList';
 import LoopControls from '../components/loop/LoopControls';
 import LoopMessageList from '../components/loop/LoopMessageList';
 import './LoopPage.css';
+
+// Store view by loop ID
+const loopStateByID = {};
 
 const LoopPage = () => {
   const { loopId } = useParams();
@@ -30,7 +34,7 @@ const LoopPage = () => {
 
   const [loadFailed, setLoadFailed] = useState(false);
   const [loadTried, setLoadTried] = useState(false);
-  const [view, setView] = useState('chat'); // 'setup' or 'chat'
+  const [view, setView] = useState('setup'); // Default to 'setup' instead of 'chat'
   
   // Effect to handle loop loading - only load existing loops, don't auto-create
   useEffect(() => {
@@ -45,11 +49,16 @@ const LoopPage = () => {
             if (!result) {
               setLoadFailed(true);
             } else {
-              // If there are messages, go to chat view, otherwise go to setup view
-              if (result.messages && result.messages.length > 0) {
-                setView('chat');
+              // If there is a saved view, use it, otherwise use setup as default
+              if (loopStateByID[loopId]?.view) {
+                setView(loopStateByID[loopId].view);
               } else {
-                setView('setup');
+                // Only switch to messages if running and has messages
+                if (result.status === 'running' && result.messages && result.messages.length > 0) {
+                  setView('chat');
+                } else {
+                  setView('setup');
+                }
               }
             }
           })
@@ -59,6 +68,16 @@ const LoopPage = () => {
       }
     }
   }, [loopId, loadLoop, loadTried, currentLoop]);
+
+  // Save state when view changes
+  useEffect(() => {
+    if (loopId && view) {
+      if (!loopStateByID[loopId]) {
+        loopStateByID[loopId] = {};
+      }
+      loopStateByID[loopId].view = view;
+    }
+  }, [loopId, view]);
 
   // Effect to automatically switch to messages view when loop is running
   useEffect(() => {
@@ -127,11 +146,6 @@ const LoopPage = () => {
     // After resetting the loop, go to setup view
     setView('setup');
   };
-  
-  // Settings button click handler
-  const handleSettingsClick = () => {
-    navigate('/settings', { state: { from: `/loop/${loopId}` } });
-  };
 
   // Show loading state if trying to load a loop
   if (loading && loopId && !currentLoop) {
@@ -184,23 +198,25 @@ const LoopPage = () => {
 
   return (
     <div className="loop-page">
+      {/* Spacer to prevent content overlap with navigation */}
+      <div className="header-spacer"></div>
+
       <div className="loop-container">
         <LoopHeader 
           loop={currentLoop} 
           onTitleChange={handleUpdateLoopTitle}
-          onSettingsClick={handleSettingsClick}
         />
         
-        {/* View toggle */}
-        <div className="view-toggle">
+        {/* Navigation tabs */}
+        <div className="loop-navigation">
           <button 
-            className={`view-toggle-button ${view === 'setup' ? 'active' : ''}`} 
+            className={`loop-nav-button ${view === 'setup' ? 'active' : ''}`} 
             onClick={() => setView('setup')}
           >
             Setup
           </button>
           <button 
-            className={`view-toggle-button ${view === 'chat' ? 'active' : ''}`} 
+            className={`loop-nav-button ${view === 'chat' ? 'active' : ''}`} 
             onClick={() => setView('chat')}
           >
             Messages
@@ -215,13 +231,28 @@ const LoopPage = () => {
               systemPrompts={systemPrompts}
             />
             
+            {/* Stop Sequences List */}
+            <StopSequencesList 
+              loopId={currentLoop.id}
+            />
+            
             {/* Loop start controls */}
             <LoopControls loopId={currentLoop.id} />
           </div>
         ) : (
           <div className="loop-chat">
             <div className="messages-container">
-              <LoopMessageList loop={currentLoop} />
+              {currentLoop?.messages && currentLoop.messages.length > 0 ? (
+                <LoopMessageList 
+                  key={`message-list-${currentLoop.id}-${currentLoop.messages.length}`} 
+                  messages={currentLoop.messages} 
+                  participants={currentLoop.participants} 
+                />
+              ) : (
+                <div className="empty-messages">
+                  <p>This loop has no messages yet. Configure participants and start the loop to begin the conversation.</p>
+                </div>
+              )}
             </div>
             <div className="loop-status-bar">
               <div className="status-indicator">

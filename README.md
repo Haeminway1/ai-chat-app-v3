@@ -10,6 +10,34 @@ A flexible Windows desktop application for chatting with multiple AI providers i
 - **Chat History**: Save and manage multiple conversations
 - **Local Storage**: All data is stored locally on your computer
 - **AI Loop System**: Create conversations where multiple AI models interact with each other
+- **Enhanced UX Features**:
+  - Improved message input with resizable text area
+  - State preservation when navigating between pages
+  - Semi-transparent navigation with text labels
+  - Consistent design across all pages
+
+## Recent Updates
+
+- **Improved Message Input for Chat**: 
+  - Increased initial height to 150px for better visibility of long messages
+  - Added custom resize handle at the top of the textarea for intuitive resizing
+  - Enhanced styling with better visual feedback
+
+- **Fixed Navigation Overlap Issues**: 
+  - Added proper spacing to prevent navigation overlapping with content
+  - Redesigned navigation bar with text labels and appropriate icons
+  - Implemented semi-transparent background with blur effect
+  - Improved responsive design for mobile views
+
+- **Preserved State Between Pages**: 
+  - Chat pages now remember scroll position when navigating
+  - Loop page defaults to the appropriate view based on state
+  - Settings page retains active tab when returning
+
+- **Enhanced Loop Page Experience**:
+  - Removed duplicate settings button
+  - Improved tab navigation with clear visual indicators
+  - Added animation effects for smoother transitions
 
 ## AI Loop System
 

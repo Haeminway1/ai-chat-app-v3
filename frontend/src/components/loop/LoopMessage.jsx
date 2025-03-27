@@ -1,145 +1,74 @@
 import React, { useState } from 'react';
+import { formatDistanceToNow } from 'date-fns';
+import ReactMarkdown from 'react-markdown';
 import './LoopMessage.css';
 
-const LoopMessage = ({ message, participantInfo }) => {
-  const [showSystemPrompt, setShowSystemPrompt] = useState(false);
+const LoopMessage = ({ message, participant, isLast }) => {
+  const [isExpanded, setIsExpanded] = useState(true);
   
-  const getSenderName = () => {
-    if (message.sender === 'user') {
-      return 'You';
-    }
-    
-    if (message.sender === 'system') {
-      return 'System';
-    }
-    
-    // Get participant info
-    const participant = participantInfo[message.sender];
-    if (participant) {
-      return participant.displayName;
-    }
-    
-    return 'Unknown';
+  if (!message) return null;
+  
+  // Convert ISO string to Date object
+  const messageDate = new Date(message.timestamp);
+  
+  // Format the timestamp
+  const formattedTime = formatDistanceToNow(messageDate, { addSuffix: true });
+  
+  // Get participant info
+  const displayName = participant?.display_name || 'Unknown';
+  const model = participant?.model || '';
+  
+  // Check if this is the initial input (using participant info from findParticipant)
+  const isInitialInput = displayName === "Initial Input";
+  
+  // Handle toggle expand/collapse
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded);
   };
-  
-  const getSenderModel = () => {
-    if (message.sender === 'user' || message.sender === 'system') {
-      return '';
-    }
-    
-    // Get participant info
-    const participant = participantInfo[message.sender];
-    if (participant) {
-      return participant.model;
-    }
-    
-    return '';
-  };
-  
-  const getSystemPrompt = () => {
-    if (message.sender === 'user' || message.sender === 'system') {
-      return '';
-    }
-    
-    // Get participant info
-    const participant = participantInfo[message.sender];
-    if (participant && participant.systemPrompt) {
-      return participant.systemPrompt;
-    }
-    
-    return 'No system prompt';
-  };
-  
-  const getMessageClass = () => {
-    if (message.sender === 'user') {
-      return 'loop-message-user';
-    }
-    
-    if (message.sender === 'system') {
-      return 'loop-message-system';
-    }
-    
-    // Check if this is a "thinking" message
-    if (message.content === 'Thinking...') {
-      return 'loop-message-ai loop-message-thinking';
-    }
-    
-    return 'loop-message-ai';
-  };
-  
-  const formatTimestamp = (timestamp) => {
-    try {
-      const date = new Date(timestamp);
-      return date.toLocaleTimeString();
-    } catch (e) {
-      return '';
-    }
-  };
-  
-  // Render thinking indicator for real-time feedback
-  const renderContent = () => {
-    if (message.content === 'Thinking...') {
-      return (
-        <div className="thinking-indicator">
-          <span className="thinking-dot"></span>
-          <span className="thinking-dot"></span>
-          <span className="thinking-dot"></span>
-          <span>Thinking</span>
-        </div>
-      );
-    }
-    
-    return message.content;
-  };
-  
-  const toggleSystemPrompt = () => {
-    setShowSystemPrompt(!showSystemPrompt);
-  };
-  
-  const hasSystemPrompt = message.sender !== 'user' && message.sender !== 'system' && participantInfo[message.sender]?.systemPrompt;
-  
-  // Get a short preview of the system prompt
-  const getSystemPromptPreview = () => {
-    const systemPrompt = getSystemPrompt();
-    if (!systemPrompt) return '';
-    
-    // Get first 20 characters or first line
-    const firstLine = systemPrompt.split('\n')[0];
-    return firstLine.length > 20 ? firstLine.substring(0, 20) + '...' : firstLine;
-  };
-  
-  const model = getSenderModel();
   
   return (
-    <div className={`loop-message ${getMessageClass()}`}>
-      <div className="loop-message-header">
-        <div className="loop-message-sender">
-          {getSenderName()}
+    <div className={`loop-message ${isExpanded ? 'expanded' : 'collapsed'}`}>
+      <div className="message-header" onClick={toggleExpand}>
+        <div className="message-sender">
+          {isInitialInput ? (
+            <span className="sender-name initial-input">Initial Input</span>
+          ) : (
+            <>
+              <span className="sender-name">{displayName}</span>
+              {model && <span className="sender-model"> ({model})</span>}
+            </>
+          )}
         </div>
-        {model && (
-          <div 
-            className="loop-message-model" 
-            onClick={hasSystemPrompt ? toggleSystemPrompt : undefined}
-            style={hasSystemPrompt ? {cursor: 'pointer'} : {}}
-          >
-            {model}
-          </div>
-        )}
+        <div className="message-meta">
+          <span className="message-time">{formattedTime}</span>
+          <span className="expand-toggle">{isExpanded ? '▼' : '▶'}</span>
+        </div>
       </div>
       
-      {showSystemPrompt && hasSystemPrompt && (
-        <div className="loop-message-system-prompt">
-          <strong>System Prompt:</strong>
-          <div className="system-prompt-content">{getSystemPrompt()}</div>
+      {isExpanded && (
+        <div className="message-content">
+          <ReactMarkdown
+            components={{
+              code({ node, inline, className, children, ...props }) {
+                const match = /language-(\w+)/.exec(className || '');
+                return !inline && match ? (
+                  <pre className={`code-block language-${match[1]}`}>
+                    <code {...props}>
+                      {String(children).replace(/\n$/, '')}
+                    </code>
+                  </pre>
+                ) : (
+                  <code className={className} {...props}>
+                    {children}
+                  </code>
+                );
+              }
+            }}
+          >
+            {message.content}
+          </ReactMarkdown>
         </div>
       )}
-      
-      <div className="loop-message-content">
-        {renderContent()}
-      </div>
-      <div className="loop-message-timestamp">
-        {formatTimestamp(message.timestamp)}
-      </div>
     </div>
   );
 };

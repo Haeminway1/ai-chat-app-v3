@@ -59,3 +59,47 @@ export const stopLoop = (loopId) => {
 export const resetLoop = (loopId) => {
   return api.post(`/loop/${loopId}/reset`);
 };
+
+export const updateLoopUserPrompt = async (loopId, loopUserPrompt) => {
+  try {
+    const response = await fetch(`/api/loop/${loopId}/loop_prompt`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ loop_user_prompt: loopUserPrompt }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update loop user prompt');
+    }
+
+    const data = await response.json();
+    return data.loop;
+  } catch (error) {
+    console.error('Error updating loop user prompt:', error);
+    throw error;
+  }
+};
+
+export const addStopSequence = (loopId, model, systemPrompt = '', displayName = null, stopCondition = '') => {
+  return api.post(`/loop/${loopId}/stop_sequence`, { 
+    model, 
+    system_prompt: systemPrompt,
+    display_name: displayName,
+    stop_condition: stopCondition
+  });
+};
+
+export const updateStopSequence = (loopId, stopSequenceId, updates) => {
+  return api.put(`/loop/${loopId}/stop_sequence/${stopSequenceId}`, updates);
+};
+
+export const removeStopSequence = (loopId, stopSequenceId) => {
+  return api.delete(`/loop/${loopId}/stop_sequence/${stopSequenceId}`);
+};
+
+export const reorderStopSequences = (loopId, stopSequenceIds) => {
+  return api.post(`/loop/${loopId}/reorder_stop_sequences`, { stop_sequence_ids: stopSequenceIds });
+};

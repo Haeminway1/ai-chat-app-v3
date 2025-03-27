@@ -7,33 +7,46 @@ const Navigation = () => {
   const location = useLocation();
   const currentPath = location.pathname;
   
-  const handleNavigation = (path) => {
-    navigate(path);
+  // Check if current path matches route (accounting for sub-routes)
+  const isActive = (route) => {
+    if (route === '/') {
+      return currentPath === '/';
+    }
+    return currentPath.startsWith(route);
   };
   
   return (
     <div className="navigation">
-      <button 
-        className={`nav-button ${currentPath.startsWith('/chat') ? 'active' : ''}`}
-        onClick={() => handleNavigation('/chat')}
-        title="Chat"
-      >
-        💬
-      </button>
-      <button 
-        className={`nav-button ${currentPath.startsWith('/loop') ? 'active' : ''}`}
-        onClick={() => handleNavigation('/loop')}
-        title="AI Loop"
-      >
-        🔄
-      </button>
-      <button 
-        className={`nav-button ${currentPath === '/settings' ? 'active' : ''}`}
-        onClick={() => handleNavigation('/settings', { state: { from: location.pathname } })}
-        title="Settings"
-      >
-        ⚙️
-      </button>
+      <div className="nav-container">
+        <button 
+          className={`nav-button ${isActive('/chat') ? 'active' : ''}`}
+          onClick={() => navigate('/chat')}
+          aria-label="Chat"
+        >
+          <span className="nav-icon">💬</span>
+          <span className="nav-label">Chat</span>
+        </button>
+        
+        <button 
+          className={`nav-button ${isActive('/loop') ? 'active' : ''}`}
+          onClick={() => navigate('/loop')}
+          aria-label="Loop"
+        >
+          <span className="nav-icon">🔄</span>
+          <span className="nav-label">Loop</span>
+        </button>
+        
+        <button 
+          className={`nav-button ${isActive('/settings') ? 'active' : ''}`}
+          onClick={() => navigate('/settings')}
+          aria-label="Settings"
+        >
+          <span className="nav-icon">⚙️</span>
+          <span className="nav-label">Settings</span>
+        </button>
+        
+        {/* Space for future navigation items */}
+      </div>
     </div>
   );
 };

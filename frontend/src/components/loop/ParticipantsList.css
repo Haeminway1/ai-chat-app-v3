@@ -1,72 +1,83 @@
 .participants-list {
-    padding: 1.5rem;
-    background-color: var(--chat-background);
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
-  }
-  
-  .participants-list-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
-  
-  .participants-list-header h3 {
-    margin: 0;
-    font-size: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+  width: 100%;
+  min-width: 1000px;
+}
+
+.participants-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.participants-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.add-participant-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-participant-button:hover {
+  background-color: #2563eb;
+}
+
+.add-participant-button:disabled {
+  background-color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.add-participant-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.participants-items {
+  width: 100%;
+}
+
+.participants-empty {
+  text-align: center;
+  padding: 48px 24px;
+  background-color: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  color: #64748b;
+  width: 100%;
+}
+
+.participants-empty p {
+  margin-bottom: 16px;
+  font-size: 15px;
+}
+
+@media (max-width: 640px) {
+  .participants-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
   
   .add-participant-button {
-    padding: 0.5rem 1rem;
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: background-color 0.2s ease;
+    width: 100%;
+    justify-content: center;
   }
-  
-  .add-participant-button:hover {
-    background-color: var(--primary-hover);
-  }
-  
-  .add-participant-button:disabled {
-    background-color: var(--secondary-color);
-    cursor: not-allowed;
-    opacity: 0.7;
-  }
-  
-  .participants-container {
-    margin-bottom: 1rem;
-  }
-  
-  .no-participants {
-    padding: 2rem;
-    text-align: center;
-    background-color: var(--background-color);
-    border: 1px dashed var(--border-color);
-    border-radius: 8px;
-    color: var(--secondary-color);
-  }
-  
-  .participants-locked-notice {
-    padding: 0.75rem;
-    background-color: var(--hover-color);
-    border-radius: 4px;
-    margin-top: 1rem;
-    font-size: 0.9rem;
-    color: var(--secondary-color);
-    border-left: 3px solid var(--primary-color);
-  }
-  
-  .participants-help {
-    margin-top: 1rem;
-    padding: 0.75rem;
-    background-color: var(--hover-color);
-    border-radius: 4px;
-    font-size: 0.85rem;
-    color: var(--secondary-color);
-    border-left: 3px solid var(--secondary-color);
-  }
+}

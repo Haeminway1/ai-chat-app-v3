@@ -13,7 +13,12 @@ import {
   pauseLoop,
   resumeLoop,
   stopLoop,
-  resetLoop
+  resetLoop,
+  updateLoopUserPrompt as updateLoopUserPromptService,
+  addStopSequence,
+  updateStopSequence,
+  removeStopSequence,
+  reorderStopSequences
 } from '../services/loopService';
 
 const LoopContext = createContext(null);
@@ -278,6 +283,111 @@ export const LoopProvider = ({ children }) => {
       setLoading(false);
     }
   };
+
+  const addNewStopSequence = async (loopId, model, systemPrompt = '', displayName = null, stopCondition = '') => {
+    setLoading(true);
+    try {
+      const result = await addStopSequence(loopId, model, systemPrompt, displayName, stopCondition);
+      if (result && result.loop) {
+        // Update currentLoop
+        if (currentLoop && currentLoop.id === loopId) {
+          setCurrentLoop(result.loop);
+        }
+        
+        // Update loop in the list
+        if (loopsLoaded) {
+          setLoops(prevLoops => 
+            prevLoops.map(l => l.id === loopId ? result.loop : l)
+          );
+        }
+      }
+      return result;
+    } catch (error) {
+      console.error('Failed to add stop sequence:', error);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateLoopStopSequence = async (loopId, stopSequenceId, updates) => {
+    setLoading(true);
+    try {
+      const result = await updateStopSequence(loopId, stopSequenceId, updates);
+      if (result && result.loop) {
+        // Update currentLoop
+        if (currentLoop && currentLoop.id === loopId) {
+          setCurrentLoop(result.loop);
+        }
+        
+        // Update loop in the list
+        if (loopsLoaded) {
+          setLoops(prevLoops => 
+            prevLoops.map(l => l.id === loopId ? result.loop : l)
+          );
+        }
+      }
+      return result;
+    } catch (error) {
+      console.error('Failed to update stop sequence:', error);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeLoopStopSequence = async (loopId, stopSequenceId) => {
+    setLoading(true);
+    try {
+      const result = await removeStopSequence(loopId, stopSequenceId);
+      if (result && result.loop) {
+        // Update currentLoop
+        if (currentLoop && currentLoop.id === loopId) {
+          setCurrentLoop(result.loop);
+        }
+        
+        // Update loop in the list
+        if (loopsLoaded) {
+          setLoops(prevLoops => 
+            prevLoops.map(l => l.id === loopId ? result.loop : l)
+          );
+        }
+      }
+      return result;
+    } catch (error) {
+      console.error('Failed to remove stop sequence:', error);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const reorderLoopStopSequences = async (loopId, stopSequenceIds) => {
+    setLoading(true);
+    try {
+      const result = await reorderStopSequences(loopId, stopSequenceIds);
+      if (result && result.loop) {
+        // Update currentLoop
+        if (currentLoop && currentLoop.id === loopId) {
+          setCurrentLoop(result.loop);
+        }
+        
+        // Update loop in the list
+        if (loopsLoaded) {
+          setLoops(prevLoops => 
+            prevLoops.map(l => l.id === loopId ? result.loop : l)
+          );
+        }
+      }
+      return result;
+    } catch (error) {
+      console.error('Failed to reorder stop sequences:', error);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loopPromptManager = {
     // 특정 루프의 프롬프트 저장
     savePrompt: (loopId, prompt) => {
@@ -467,6 +577,33 @@ export const LoopProvider = ({ children }) => {
       setLoading(false);
     }
   };
+
+  // Add the updateLoopUserPrompt function
+  const updateLoopUserPrompt = async (loopId, loopUserPrompt) => {
+    setLoading(true);
+    try {
+      const loop = await updateLoopUserPromptService(loopId, loopUserPrompt);
+      if (loop) {
+        // Update currentLoop if it's the one being updated
+        if (currentLoop && currentLoop.id === loopId) {
+          setCurrentLoop(loop);
+        }
+        
+        // Update loop in the list
+        if (loopsLoaded) {
+          setLoops(prevLoops => 
+            prevLoops.map(l => l.id === loopId ? loop : l)
+          );
+        }
+      }
+      return loop;
+    } catch (error) {
+      console.error('Failed to update loop user prompt:', error);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
   
   // Cleanup on unmount
   useEffect(() => {
@@ -535,7 +672,106 @@ export const LoopProvider = ({ children }) => {
     pauseCurrentLoop,
     resumeCurrentLoop,
     stopCurrentLoop,
-    resetCurrentLoop
+    resetCurrentLoop,
+    updateLoopUserPrompt,
+    // Add stop sequence functions
+    addNewStopSequence,
+    updateLoopStopSequence,
+    removeLoopStopSequence,
+    reorderLoopStopSequences,
+    // Add wrapper for removeParticipant to match function name in ParticipantsList
+    removeParticipant: (index) => {
+      if (!currentLoop || !currentLoop.participants || index >= currentLoop.participants.length) return null;
+      const participantId = currentLoop.participants[index].id;
+      return removeLoopParticipant(currentLoop.id, participantId);
+    },
+    // Add helper functions for modern interface
+    addParticipant: () => {
+      if (!currentLoop) return null;
+      const defaultModel = "gpt-4o";
+      const displayName = `AI ${currentLoop.participants.length + 1}`;
+      return addNewParticipant(currentLoop.id, defaultModel, "", displayName);
+    },
+    updateParticipant: (index, updatedData) => {
+      if (!currentLoop || !currentLoop.participants || index >= currentLoop.participants.length) return null;
+      const participantId = currentLoop.participants[index].id;
+      return updateLoopParticipant(currentLoop.id, participantId, updatedData);
+    },
+    // Add stop sequence convenience functions
+    addStopSequence: () => {
+      if (!currentLoop) return null;
+      const defaultModel = "gpt-4o";
+      const displayName = `Stop Sequence ${currentLoop.stop_sequences?.length + 1 || 1}`;
+      return addNewStopSequence(currentLoop.id, defaultModel, "", displayName, "");
+    },
+    removeStopSequence: (index) => {
+      if (!currentLoop || !currentLoop.stop_sequences || index >= currentLoop.stop_sequences.length) return null;
+      const stopSequenceId = currentLoop.stop_sequences[index].id;
+      return removeLoopStopSequence(currentLoop.id, stopSequenceId);
+    },
+    updateStopSequence: (index, updatedData) => {
+      if (!currentLoop || !currentLoop.stop_sequences || index >= currentLoop.stop_sequences.length) return null;
+      const stopSequenceId = currentLoop.stop_sequences[index].id;
+      return updateLoopStopSequence(currentLoop.id, stopSequenceId, updatedData);
+    },
+    moveStopSequenceUp: (index) => {
+      if (!currentLoop || !currentLoop.stop_sequences || index <= 0) return null;
+      
+      // Get all stop sequence IDs in current order
+      const stopSequenceIds = [...currentLoop.stop_sequences]
+        .sort((a, b) => a.order_index - b.order_index)
+        .map(s => s.id);
+      
+      // Swap with previous item
+      [stopSequenceIds[index], stopSequenceIds[index-1]] = [stopSequenceIds[index-1], stopSequenceIds[index]];
+      
+      // Update order on the server
+      return reorderLoopStopSequences(currentLoop.id, stopSequenceIds);
+    },
+    moveStopSequenceDown: (index) => {
+      if (!currentLoop || !currentLoop.stop_sequences || index >= currentLoop.stop_sequences.length - 1) return null;
+      
+      // Get all stop sequence IDs in current order
+      const stopSequenceIds = [...currentLoop.stop_sequences]
+        .sort((a, b) => a.order_index - b.order_index)
+        .map(s => s.id);
+      
+      // Swap with next item
+      [stopSequenceIds[index], stopSequenceIds[index+1]] = [stopSequenceIds[index+1], stopSequenceIds[index]];
+      
+      // Update order on the server
+      return reorderLoopStopSequences(currentLoop.id, stopSequenceIds);
+    },
+    moveParticipantUp: (index) => {
+      if (!currentLoop || !currentLoop.participants || index <= 0) return null;
+      
+      // Get all participant IDs in current order
+      const participantIds = [...currentLoop.participants]
+        .sort((a, b) => a.order_index - b.order_index)
+        .map(p => p.id);
+      
+      // Swap with previous item
+      [participantIds[index], participantIds[index-1]] = [participantIds[index-1], participantIds[index]];
+      
+      // Update order on the server
+      return reorderLoopParticipants(currentLoop.id, participantIds);
+    },
+    moveParticipantDown: (index) => {
+      if (!currentLoop || !currentLoop.participants || index >= currentLoop.participants.length - 1) return null;
+      
+      // Get all participant IDs in current order
+      const participantIds = [...currentLoop.participants]
+        .sort((a, b) => a.order_index - b.order_index)
+        .map(p => p.id);
+      
+      // Swap with next item
+      [participantIds[index], participantIds[index+1]] = [participantIds[index+1], participantIds[index]];
+      
+      // Update order on the server
+      return reorderLoopParticipants(currentLoop.id, participantIds);
+    },
+    isLoopRunning: currentLoop?.status === 'running',
+    isLoopPaused: currentLoop?.status === 'paused'
   };
 
   return (

@@ -37,6 +37,14 @@ const SystemMessageEditor = ({ chat, modelConfig, systemPrompts, onUpdateSystemM
     }
   }, [chat, systemPrompts]);
   
+  // Handle Edit button click - uncollapse and enable editing
+  const handleEditClick = () => {
+    if (collapsed) {
+      setCollapsed(false); // Expand the section if it's collapsed
+    }
+    setEditing(true); // Enable editing mode
+  };
+  
   const handleSaveSystem = () => {
     onUpdateSystemMessage(systemMessage);
     setEditing(false);
@@ -74,7 +82,7 @@ const SystemMessageEditor = ({ chat, modelConfig, systemPrompts, onUpdateSystemM
         <div className="system-message-controls">
           <button 
             className="system-message-toggle"
-            onClick={() => setEditing(!editing)}
+            onClick={editing ? () => setEditing(false) : handleEditClick}
           >
             {editing ? 'Cancel' : 'Edit'}
           </button>

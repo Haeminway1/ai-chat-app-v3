@@ -9,7 +9,6 @@ import LoopList from './loop/LoopList';
 import './Sidebar.css';
 
 const ModelParameters = ({ currentModel, modelConfig, onUpdateParameters, onSwitchModel }) => {
-  const { jsonMode, toggleJsonMode } = useSettings();
   const [temperature, setTemperature] = useState(modelConfig?.temperature || 0.7);
   const [maxTokens, setMaxTokens] = useState(modelConfig?.max_tokens || 4000);
   const [reasoningEffort, setReasoningEffort] = useState(modelConfig?.reasoning_effort || "medium");
@@ -118,17 +117,6 @@ const ModelParameters = ({ currentModel, modelConfig, onUpdateParameters, onSwit
         </div>
       )}
       
-      <div className="json-mode-toggle">
-        <label>
-          <input 
-            type="checkbox" 
-            checked={jsonMode} 
-            onChange={() => toggleJsonMode(!jsonMode)} 
-          />
-          JSON Mode
-        </label>
-      </div>
-      
       <button className="primary-button" onClick={handleSave}>Save Parameters</button>
     </div>
   );
@@ -198,23 +186,6 @@ const Sidebar = ({ onToggle }) => {
       </div>
       
       {!collapsed && (
-        <div className="sidebar-tabs">
-          <button 
-            className={`sidebar-tab ${currentView === 'chat' ? 'active' : ''}`}
-            onClick={() => navigate('/chat')}
-          >
-            Chats
-          </button>
-          <button 
-            className={`sidebar-tab ${currentView === 'loop' ? 'active' : ''}`}
-            onClick={() => navigate('/loop')}
-          >
-            Loops
-          </button>
-        </div>
-      )}
-      
-      {!collapsed && (
         <button 
           className="new-chat-button primary-button"
           onClick={currentView === 'loop' ? handleNewLoop : handleNewChat}
@@ -224,7 +195,7 @@ const Sidebar = ({ onToggle }) => {
       )}
       
       <div className="sidebar-controls">
-        {!collapsed && (
+        {!collapsed && currentView === 'chat' && (
           <button 
             className={`params-toggle ${showParams ? 'active' : ''}`}
             onClick={() => setShowParams(!showParams)}
@@ -233,7 +204,7 @@ const Sidebar = ({ onToggle }) => {
           </button>
         )}
 
-        {showParams && !collapsed && currentModel && modelConfigs[currentModel] && (
+        {showParams && !collapsed && currentModel && modelConfigs[currentModel] && currentView === 'chat' && (
           <div className="model-params-panel">
             <ModelParameters 
               currentModel={currentModel} 

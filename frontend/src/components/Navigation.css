@@ -1,34 +1,83 @@
 .navigation {
-    position: fixed;
-    top: 1rem;
-    right: 1rem;
-    display: flex;
-    gap: 0.5rem;
-    z-index: 100;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000; /* Higher z-index to ensure it's always on top */
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.5rem;
+  pointer-events: none; /* This makes the container not block any elements below */
+}
+
+.nav-container {
+  display: flex;
+  gap: 0.5rem;
+  background-color: rgba(var(--background-color-rgb), 0.95);
+  padding: 0.75rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(var(--border-color-rgb), 0.5);
+  pointer-events: auto; /* Re-enable pointer events for the buttons */
+}
+
+.nav-button {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-color);
+  background-color: transparent;
+  transition: all 0.2s ease;
+}
+
+.nav-button:hover {
+  background-color: rgba(var(--hover-color-rgb), 0.7);
+  transform: translateY(-2px);
+}
+
+.nav-button.active {
+  background-color: var(--primary-color);
+  color: white;
+  box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.3);
+}
+
+.nav-icon {
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-label {
+  white-space: nowrap;
+}
+
+/* Media query for small screens */
+@media (max-width: 768px) {
+  .navigation {
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    justify-content: center;
+    padding: 0;
+  }
+  
+  .nav-container {
+    width: 100%;
+    justify-content: space-around;
+    border-radius: 12px 12px 0 0;
+    padding: 0.75rem 1rem;
   }
   
   .nav-button {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--chat-background);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: all 0.2s ease;
+    flex-direction: column;
+    padding: 0.75rem 0.5rem;
+    flex: 1;
   }
-  
-  .nav-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  }
-  
-  .nav-button.active {
-    background-color: var(--primary-color);
-    color: white;
-  }
+}

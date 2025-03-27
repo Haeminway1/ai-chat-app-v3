@@ -47,7 +47,7 @@ class LoopService:
         self.stop_loop(loop_id)
         return self.loop_store.delete_loop(loop_id)
     
-    def add_participant(self, loop_id, model, system_prompt="", display_name=None):
+    def add_participant(self, loop_id, model, system_prompt="", display_name=None, user_prompt=""):
         """Add a participant to the loop"""
         loop = self.loop_store.get_loop(loop_id)
         if not loop:
@@ -61,9 +61,10 @@ class LoopService:
         # Log system prompt info for debugging
         logger.info(f"Adding participant to loop {loop_id} with model {model}")
         logger.info(f"System prompt: {system_prompt}")
+        logger.info(f"User prompt: {user_prompt}")
         logger.info(f"Display name: {display_name or f'AI {next_order}'}")
         
-        participant = loop.add_participant(model, next_order, system_prompt, display_name)
+        participant = loop.add_participant(model, next_order, system_prompt, display_name, user_prompt)
         return self.loop_store.save_loop(loop), participant
     
     def update_participant(self, loop_id, participant_id, updates):
@@ -99,6 +100,16 @@ class LoopService:
             return None
         
         loop.reorder_participants(participant_ids)
+        return self.loop_store.save_loop(loop)
+    
+    def update_loop_prompt(self, loop_id, loop_user_prompt):
+        """Update the loop user prompt"""
+        loop = self.loop_store.get_loop(loop_id)
+        if not loop:
+            return None
+        
+        loop.loop_user_prompt = loop_user_prompt
+        loop.updated_at = datetime.now()
         return self.loop_store.save_loop(loop)
     
     def start_loop(self, loop_id, initial_prompt):
@@ -248,123 +259,139 @@ class LoopService:
                 
                 # Exit if loop is no longer running
                 if not loop or loop.status != "running":
-                    logger.info(f"Loop {loop_id} is no longer running. Status: {loop.status if loop else 'None'}")
+                    logger.info(f"Loop {loop_id} is no longer running, exiting thread.")
                     break
                 
-                # Check if we've hit the max turns limit
-                if loop.max_turns and loop.current_turn >= loop.max_turns:
-                    logger.info(f"Loop {loop_id} reached max turns: {loop.max_turns}")
-                    loop.status = "stopped"
-                    self.loop_store.save_loop(loop)
-                    break
+                # Get messages and participants
+                messages = loop.messages
+                participants = loop.get_sorted_participants()
+                stop_sequences = loop.get_sorted_stop_sequences()
                 
-                # Get the last message and sender
-                last_message = loop.messages[-1] if loop.messages else None
-                
-                if not last_message:
-                    logger.warning(f"Loop {loop_id} has no messages to process")
-                    break
-                
-                # If the last message is a thinking message, skip this iteration
-                # This prevents processing a message that's still in thinking state
-                if last_message.content == "Thinking...":
-                    logger.info(f"Loop {loop_id} has a thinking message as the last message. Waiting...")
+                if not messages or not participants:
+                    logger.warning(f"Loop {loop_id} has no messages or participants, pausing.")
                     time.sleep(1)
                     continue
                 
-                # Determine the next participant
-                next_participant = loop.get_next_participant(last_message.sender)
+                # Determine the last sender
+                last_message = messages[-1]
+                last_sender = last_message.sender
+                
+                # Check if we should stop based on stop sequences after each new AI message (not user input)
+                if stop_sequences and last_sender != "user" and len(messages) >= 2:
+                    for stop_seq in stop_sequences:
+                        # No longer check only for preceding participant - evaluate against entire conversation
+                        # Process the stop condition with the AI model
+                        stop_reason = self._check_stop_condition(
+                            loop_id, 
+                            stop_seq, 
+                            messages
+                        )
+                        
+                        # If the stop condition is met, stop the loop
+                        if stop_reason:
+                            logger.info(f"Stop condition met for loop {loop_id}, stopping: {stop_reason}")
+                            loop.status = "stopped"
+                            self.loop_store.save_loop(loop)
+                            
+                            # Add a system message indicating the loop was stopped
+                            loop.add_message(
+                                f"Loop stopped by stop sequence '{stop_seq.display_name}': {stop_reason}",
+                                "system"
+                            )
+                            self.loop_store.save_loop(loop)
+                            return
+                
+                # Get next participant
+                next_participant = loop.get_next_participant(last_sender)
                 
                 if not next_participant:
-                    logger.warning(f"Loop {loop_id} has no next participant after {last_message.sender}")
-                    break
+                    logger.warning(f"Could not determine next participant for loop {loop_id}, pausing.")
+                    time.sleep(1)
+                    continue
                 
-                # Log progress to help with debugging
-                cycle_count += 1
-                logger.info(f"Loop {loop_id} - Cycle {cycle_count}")
-                logger.info(f"Last message from: {last_message.sender}, Next participant: {next_participant.display_name}")
+                # Get content to send to the model (this is where we'll implement the new user_prompt logic)
+                processed_input = ""
                 
-                # Add a "thinking" message to show real-time updates
-                thinking_message = loop.add_message(f"Thinking...", next_participant.id)
-                self.loop_store.save_loop(loop)
-                
-                # Process the message with the next participant's model
-                try:
-                    response = self._process_with_model(
-                        loop_id,
-                        next_participant,
-                        last_message.content
-                    )
-                    
-                    # Check if response is empty or invalid
-                    if not response or not response.strip():
-                        error_msg = "Error: Model returned empty response"
-                        logger.error(error_msg)
-                        
-                        # Update the thinking message with error
-                        loop = self.loop_store.get_loop(loop_id)
-                        for i, msg in enumerate(loop.messages):
-                            if msg.id == thinking_message.id:
-                                loop.messages[i].content = error_msg
+                # If the last message was from a user or another participant
+                if last_sender == "user" or last_sender in [p.id for p in participants]:
+                    # Determine the content based on who sent the last message
+                    if last_sender == "user":
+                        # This is the initial user message at the start of the loop
+                        processed_input = last_message.content
+                    else:
+                        # Find the last participant
+                        last_participant = None
+                        for p in participants:
+                            if p.id == last_sender:
+                                last_participant = p
                                 break
                         
-                        loop.status = "paused"
-                        self.loop_store.save_loop(loop)
-                        break
+                        # Determine the current participant in the sequence
+                        current_index = participants.index(next_participant)
+                        
+                        # If this is not the first participant, use user_prompt with the last message
+                        if current_index > 0 or (current_index == 0 and cycle_count > 0):
+                            # If it's the first participant on subsequent cycles, use loop_user_prompt
+                            if current_index == 0 and cycle_count > 0:
+                                if loop.loop_user_prompt:
+                                    # Replace {prior_output} in the loop user prompt
+                                    processed_input = loop.loop_user_prompt.replace("{prior_output}", last_message.content)
+                                    # If no placeholder was found, append to the end
+                                    if "{prior_output}" not in loop.loop_user_prompt:
+                                        processed_input = f"{loop.loop_user_prompt}\n\n{last_message.content}"
+                                else:
+                                    # Default if no loop user prompt is specified
+                                    processed_input = f"Input:\n{last_message.content}"
+                            else:
+                                # Not the first participant, use its custom user prompt
+                                if next_participant.user_prompt:
+                                    # Replace {prior_output} in the user prompt
+                                    processed_input = next_participant.user_prompt.replace("{prior_output}", last_message.content)
+                                    # If no placeholder was found, append to the end
+                                    if "{prior_output}" not in next_participant.user_prompt:
+                                        processed_input = f"{next_participant.user_prompt}\n\n{last_message.content}"
+                                else:
+                                    # Default if no user prompt is specified
+                                    processed_input = f"Input:\n{last_message.content}"
+                        else:
+                            # First participant in the first cycle - use initial message directly
+                            processed_input = last_message.content
                     
-                    # Get fresh loop state after processing
-                    loop = self.loop_store.get_loop(loop_id)
+                    logger.info(f"Processing turn for participant {next_participant.display_name} in loop {loop_id}")
                     
-                    # Find and update the thinking message
-                    found_thinking = False
-                    for i, msg in enumerate(loop.messages):
-                        if msg.id == thinking_message.id:
-                            loop.messages[i].content = response
-                            found_thinking = True
-                            break
+                    try:
+                        # Call the model with the processed input
+                        response_content = self._process_with_model(loop_id, next_participant, processed_input)
+                        
+                        if response_content and not stop_event.is_set():
+                            # Add AI message to conversation
+                            loop.add_message(response_content, next_participant.id)
+                            self.loop_store.save_loop(loop)
+                            
+                            logger.info(f"Added response from {next_participant.display_name} to loop {loop_id}")
+                            
+                            # First turn completed for all participants; increment cycle
+                            if next_participant.order_index == max(p.order_index for p in participants):
+                                cycle_count += 1
+                                logger.info(f"Completed cycle {cycle_count} for loop {loop_id}")
+                        
+                        # Brief pause between turns to avoid overwhelming the API
+                        time.sleep(0.5)
                     
-                    if not found_thinking:
-                        logger.warning(f"Could not find thinking message {thinking_message.id} to update")
-                    
-                    # Save the updated loop
-                    self.loop_store.save_loop(loop)
-                    
-                    # Add a small delay between messages to prevent API rate limits
-                    # and to make the conversation look more natural
-                    time.sleep(2)
-                    
-                except Exception as e:
-                    logger.error(f"Error processing loop turn: {str(e)}")
-                    traceback.print_exc()
-                    
-                    # Add error message
-                    error_msg = f"Error: {str(e)}"
-                    
-                    # Get fresh loop state
-                    loop = self.loop_store.get_loop(loop_id)
-                    
-                    # Find and update the thinking message with error
-                    for i, msg in enumerate(loop.messages):
-                        if msg.id == thinking_message.id:
-                            loop.messages[i].content = error_msg
-                            break
-                    
-                    loop.status = "paused"  # Pause on error
-                    self.loop_store.save_loop(loop)
-                    break
-            
+                    except Exception as e:
+                        logger.error(f"Error processing turn for participant {next_participant.display_name}: {e}")
+                        logger.error(traceback.format_exc())
+                        # Longer pause after an error
+                        time.sleep(2)
+                
+                # Short pause between loop iterations
+                time.sleep(0.2)
+        
         except Exception as e:
-            logger.error(f"Loop thread error: {str(e)}")
-            traceback.print_exc()
+            logger.error(f"Error in loop thread for loop {loop_id}: {e}")
+            logger.error(traceback.format_exc())
         finally:
-            # Clean up when thread exits
-            if loop_id in self.active_loops:
-                del self.active_loops[loop_id]
-            
-            if loop_id in self.stop_events:
-                del self.stop_events[loop_id]
-            
-            logger.info(f"Loop thread for {loop_id} has exited")
+            logger.info(f"Loop thread for loop {loop_id} terminated")
     
     def _process_with_model(self, loop_id, participant, content):
         """Process a message with an AI model - final version with identity preservation"""
@@ -495,3 +522,146 @@ class LoopService:
             # Generate response
             response = participant_model_manager.generate_content(conversation_transcript)
             return response
+
+    def add_stop_sequence(self, loop_id, model, system_prompt="", display_name=None, stop_condition=""):
+        """Add a stop sequence to a loop"""
+        loop = self.loop_store.get_loop(loop_id)
+        if not loop:
+            return None
+        
+        # Get the highest order_index or 0 if no stop sequences
+        order_index = 1
+        if loop.stop_sequences:
+            order_index = max(s.order_index for s in loop.stop_sequences) + 1
+        
+        # If no display name, create a default one
+        if not display_name:
+            display_name = f"Stop Sequence {order_index}"
+        
+        # Add the stop sequence
+        loop.add_stop_sequence(model, order_index, system_prompt, display_name, stop_condition)
+        return {
+            "loop": self.loop_store.save_loop(loop),
+            "success": True
+        }
+    
+    def update_stop_sequence(self, loop_id, stop_sequence_id, updates):
+        """Update a stop sequence in a loop"""
+        loop = self.loop_store.get_loop(loop_id)
+        if not loop:
+            return None
+        
+        stop_sequence = loop.update_stop_sequence(stop_sequence_id, **updates)
+        if not stop_sequence:
+            return None
+            
+        return {
+            "loop": self.loop_store.save_loop(loop),
+            "success": True
+        }
+    
+    def remove_stop_sequence(self, loop_id, stop_sequence_id):
+        """Remove a stop sequence from a loop"""
+        loop = self.loop_store.get_loop(loop_id)
+        if not loop:
+            return None
+        
+        loop.remove_stop_sequence(stop_sequence_id)
+        return {
+            "loop": self.loop_store.save_loop(loop),
+            "success": True
+        }
+    
+    def reorder_stop_sequences(self, loop_id, stop_sequence_ids):
+        """Reorder stop sequences in a loop"""
+        loop = self.loop_store.get_loop(loop_id)
+        if not loop:
+            return None
+        
+        loop.reorder_stop_sequences(stop_sequence_ids)
+        return {
+            "loop": self.loop_store.save_loop(loop),
+            "success": True
+        }
+
+    def _check_stop_condition(self, loop_id, stop_sequence, messages):
+        """Check if a stop condition is met using the entire conversation history"""
+        # Get the full loop to access all messages
+        loop = self.loop_store.get_loop(loop_id)
+        
+        # Create a readable conversation history
+        conversation_history = ""
+        participant_names = {}
+        
+        # Create mapping of participant IDs to their names
+        for p in loop.participants:
+            participant_names[p.id] = p.display_name
+        
+        # Format the conversation history
+        for msg in messages:
+            if msg.sender == "user":
+                conversation_history += f"User: {msg.content}\n\n"
+            elif msg.sender == "system":
+                conversation_history += f"System: {msg.content}\n\n"
+            else:
+                sender_name = participant_names.get(msg.sender, "Unknown AI")
+                conversation_history += f"{sender_name}: {msg.content}\n\n"
+        
+        # Extract the last message for simple string matching
+        last_message_content = messages[-1].content if messages else ""
+        
+        # If there's a simple stop condition string, just check for exact match in the last message
+        if stop_sequence.stop_condition and not stop_sequence.system_prompt:
+            if stop_sequence.stop_condition.strip() in last_message_content:
+                return stop_sequence.stop_condition
+            return False
+        
+        # If there's a system prompt, use the AI to evaluate the entire conversation
+        if stop_sequence.system_prompt:
+            try:
+                # Create prompt for checking the stop condition
+                prompt = f"""
+                You are a stop condition evaluator. Your task is to determine if the loop should be stopped based on the given criteria.
+                
+                STOP CONDITION:
+                {stop_sequence.stop_condition}
+                
+                CONVERSATION HISTORY:
+                {conversation_history}
+                
+                INSTRUCTIONS:
+                1. Evaluate if the conversation meets the stop condition criteria.
+                2. Consider the entire conversation flow and context, not just the last message.
+                3. Return exactly "STOP" if the condition is met, or "CONTINUE" if not.
+                4. Be precise in your evaluation and follow the stop condition exactly.
+                
+                Your response (STOP or CONTINUE):
+                """
+                
+                # Process with the model
+                model_type = stop_sequence.model
+                
+                # Create a dedicated ModelManager instance
+                stop_model_manager = ModelManager()
+                stop_model_manager._initialize_models()
+                stop_model_manager.change_model(model_type)
+                
+                messages = [
+                    {"role": "system", "content": stop_sequence.system_prompt},
+                    {"role": "user", "content": prompt}
+                ]
+                
+                response = stop_model_manager.generate_content(messages)
+                
+                # Check if the response contains STOP
+                if "STOP" in response.upper():
+                    reason = response.replace("STOP", "").strip()
+                    return reason if reason else "Stop condition met"
+                
+                return False
+            
+            except Exception as e:
+                logger.error(f"Error evaluating stop condition: {e}")
+                return False
+        
+        return False

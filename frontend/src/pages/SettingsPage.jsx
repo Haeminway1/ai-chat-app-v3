@@ -6,6 +6,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import './SettingsPage.css';
 
+// Store settings state between navigations
+const settingsState = {
+  activeTab: 'prompts'
+};
+
 const SettingsPage = ({ returnPath }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -14,7 +19,7 @@ const SettingsPage = ({ returnPath }) => {
     systemPrompts,
     updateSystemPrompt,
     createSystemPrompt,
-    deleteSystemPrompt, // 새로 필요한 함수
+    deleteSystemPrompt,
     loadSettings
   } = useSettings();
   const { keyStatus, saveKeys } = useAuth();
@@ -28,7 +33,8 @@ const SettingsPage = ({ returnPath }) => {
   
   // 모델별 선택된 프롬프트
   const [selectedPrompts, setSelectedPrompts] = useState({});
-  const [activeTab, setActiveTab] = useState('prompts');
+  // Use the stored active tab or default to 'prompts'
+  const [activeTab, setActiveTab] = useState(settingsState.activeTab || 'prompts');
   const [apiKeys, setApiKeys] = useState({
     OPENAI_API_KEY: '',
     ANTHROPIC_API_KEY: '',
@@ -38,6 +44,11 @@ const SettingsPage = ({ returnPath }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  
+  // Save active tab state when it changes
+  useEffect(() => {
+    settingsState.activeTab = activeTab;
+  }, [activeTab]);
   
   // 초기화: 선택된 프롬프트와 모델 설정
   useEffect(() => {
@@ -162,293 +173,304 @@ const SettingsPage = ({ returnPath }) => {
   
   return (
     <div className="settings-page">
-      <div className="settings-close">
-        <button onClick={handleClose} className="close-button">×</button>
-      </div>
+      {/* Spacer to prevent content overlap with navigation */}
+      <div className="header-spacer"></div>
       
-      <div className="settings-tabs">
-        <button 
-          className={`tab-button ${activeTab === 'prompts' ? 'active' : ''}`}
-          onClick={() => setActiveTab('prompts')}
-        >
-          Prompt Settings
-        </button>
-        <button 
-          className={`tab-button ${activeTab === 'api-keys' ? 'active' : ''}`}
-          onClick={() => setActiveTab('api-keys')}
-        >
-          API Keys
-        </button>
-        <button 
-          className={`tab-button ${activeTab === 'appearance' ? 'active' : ''}`}
-          onClick={() => setActiveTab('appearance')}
-        >
-          Appearance
-        </button>
-      </div>
-      
-      {activeTab === 'prompts' && (
-        <section className="settings-section">
-          <h2>System Prompts</h2>
-          
-          {/* 시스템 프롬프트 목록 */}
-          <div className="prompts-list">
-            <h3>Prompt Library</h3>
+      <div className="settings-container">
+        <div className="settings-close">
+          <button onClick={handleClose} className="close-button">×</button>
+        </div>
+        
+        <div className="settings-tabs">
+          <button 
+            className={`tab-button ${activeTab === 'prompts' ? 'active' : ''}`}
+            onClick={() => setActiveTab('prompts')}
+          >
+            Prompt Settings
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'api-keys' ? 'active' : ''}`}
+            onClick={() => setActiveTab('api-keys')}
+          >
+            API Keys
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'appearance' ? 'active' : ''}`}
+            onClick={() => setActiveTab('appearance')}
+          >
+            Appearance
+          </button>
+        </div>
+        
+        {activeTab === 'prompts' && (
+          <section className="settings-section">
+            <h2>System Prompts</h2>
+            
+            {/* 시스템 프롬프트 목록 */}
+            <div className="prompts-list">
+              <h3>Prompt Library</h3>
+              <p className="settings-description">
+                Manage your system prompts here. You can create, edit, and delete prompts, 
+                and assign them to different models.
+              </p>
+              
+              <div className="prompt-cards">
+                {Object.entries(systemPrompts).map(([key, text]) => (
+                  <div key={key} className="prompt-card">
+                    <div className="prompt-card-header">
+                      <h4>{key}</h4>
+                      <div className="prompt-card-actions">
+                        {editingPrompt !== key ? (
+                          <>
+                            <button 
+                              className="edit-button"
+                              onClick={() => handleStartEdit(key, text)}
+                            >
+                              Edit
+                            </button>
+                            {key !== 'default_system' && (
+                              <button 
+                                className="delete-button"
+                                onClick={() => handleDeletePrompt(key)}
+                              >
+                                Delete
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <button 
+                            className="save-button"
+                            onClick={handleSaveEdit}
+                          >
+                            Save
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {editingPrompt === key ? (
+                      <textarea
+                        className="prompt-edit-textarea"
+                        value={editedPromptText}
+                        onChange={(e) => setEditedPromptText(e.target.value)}
+                        rows={5}
+                      />
+                    ) : (
+                      <div className="prompt-card-content">
+                        {text}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* 새 프롬프트 추가 폼 */}
+            <div className="add-prompt-form">
+              <h3>Add New System Prompt</h3>
+              <form onSubmit={handleAddPrompt}>
+                <div className="form-group">
+                  <label htmlFor="promptKey">Prompt Key (ID):</label>
+                  <input 
+                    type="text" 
+                    id="promptKey"
+                    value={newPromptKey}
+                    onChange={(e) => setNewPromptKey(e.target.value)}
+                    placeholder="e.g., creative_writer, code_assistant, etc."
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="promptText">Prompt Text:</label>
+                  <textarea 
+                    id="promptText"
+                    value={newPromptText}
+                    onChange={(e) => setNewPromptText(e.target.value)}
+                    placeholder="Enter the system prompt text..."
+                    rows={5}
+                    required
+                  ></textarea>
+                </div>
+                <button type="submit" className="primary-button">Add Prompt</button>
+              </form>
+            </div>
+            
+            {/* 모델별 프롬프트 할당 */}
+            <div className="model-prompts-assignment">
+              <h3>Assign Prompts to Models</h3>
+              <p className="settings-description">
+                Choose which system prompt to use for each model.
+              </p>
+              
+              <div className="model-prompts">
+                {Object.entries(modelConfigs).map(([modelKey, config]) => (
+                  <div key={modelKey} className="model-prompt-setting">
+                    <h4>{modelKey}</h4>
+                    <select 
+                      value={selectedPrompts[modelKey] || 'default_system'}
+                      onChange={(e) => handlePromptChange(modelKey, e.target.value)}
+                    >
+                      {Object.keys(systemPrompts).map(promptKey => (
+                        <option key={promptKey} value={promptKey}>
+                          {promptKey}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="prompt-preview">
+                      {systemPrompts[selectedPrompts[modelKey]] || systemPrompts['default_system']}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+        
+        {activeTab === 'api-keys' && (
+          <section className="settings-section">
+            <h2>API Keys</h2>
             <p className="settings-description">
-              Manage your system prompts here. You can create, edit, and delete prompts, 
-              and assign them to different models.
+              Configure your AI model provider API keys. At least one API key is required to use the application.
             </p>
             
-            <div className="prompt-cards">
-              {Object.entries(systemPrompts).map(([key, text]) => (
-                <div key={key} className="prompt-card">
-                  <div className="prompt-card-header">
-                    <h4>{key}</h4>
-                    <div className="prompt-card-actions">
-                      {editingPrompt !== key ? (
-                        <>
-                          <button 
-                            className="edit-button"
-                            onClick={() => handleStartEdit(key, text)}
-                          >
-                            Edit
-                          </button>
-                          {key !== 'default_system' && (
-                            <button 
-                              className="delete-button"
-                              onClick={() => handleDeletePrompt(key)}
-                            >
-                              Delete
-                            </button>
-                          )}
-                        </>
-                      ) : (
-                        <button 
-                          className="save-button"
-                          onClick={handleSaveEdit}
-                        >
-                          Save
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {editingPrompt === key ? (
-                    <textarea
-                      className="prompt-edit-textarea"
-                      value={editedPromptText}
-                      onChange={(e) => setEditedPromptText(e.target.value)}
-                      rows={5}
-                    />
-                  ) : (
-                    <div className="prompt-card-content">
-                      {text}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* 새 프롬프트 추가 폼 */}
-          <div className="add-prompt-form">
-            <h3>Add New System Prompt</h3>
-            <form onSubmit={handleAddPrompt}>
-              <div className="form-group">
-                <label>Prompt Key:</label>
-                <input 
-                  type="text"
-                  value={newPromptKey}
-                  onChange={(e) => setNewPromptKey(e.target.value)}
-                  placeholder="e.g., creative_assistant"
-                  required
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>Prompt Text:</label>
-                <textarea 
-                  value={newPromptText}
-                  onChange={(e) => setNewPromptText(e.target.value)}
-                  placeholder="Enter the system prompt text..."
-                  rows={5}
-                  required
-                />
-              </div>
-              
-              <button type="submit" className="primary-button">
-                Add Prompt
-              </button>
-            </form>
-          </div>
-          
-          {/* 모델별 프롬프트 할당 */}
-          <div className="model-prompts-assignment">
-            <h3>Assign Prompts to Models</h3>
-            <div className="model-prompts">
-              {Object.keys(modelConfigs).map(modelKey => (
-                <div key={modelKey} className="model-prompt-setting">
-                  <h4>{modelKey}</h4>
-                  <select 
-                    value={selectedPrompts[modelKey] || ''} 
-                    onChange={(e) => handlePromptChange(modelKey, e.target.value)}
-                  >
-                    {Object.keys(systemPrompts).map(promptKey => (
-                      <option key={promptKey} value={promptKey}>
-                        {promptKey}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-      
-      {activeTab === 'api-keys' && (
-        <section className="settings-section">
-          <h2>API Keys</h2>
-          
-          <div className="api-keys-container">
-            {error && (
-              <div className="error-message">
-                {error}
-              </div>
-            )}
+            {error && <div className="error-message">{error}</div>}
+            {success && <div className="success-message">API keys saved successfully</div>}
             
-            {success && (
-              <div className="success-message">
-                API keys saved successfully!
-              </div>
-            )}
-            
-            <form onSubmit={handleApiKeySave} className="api-keys-form">
-              <div className="api-key-group">
-                <label>
+            <div className="api-keys-container">
+              <form onSubmit={handleApiKeySave} className="api-keys-form">
+                <div className="api-key-group">
                   <div className="key-label">
-                    <span>OpenAI API Key</span>
-                    {keyStatus.openai && <span className="key-status active">Active</span>}
+                    <label htmlFor="openai-key">OpenAI API Key</label>
+                    <span className={`key-status ${keyStatus.OPENAI_API_KEY ? 'active' : ''}`}>
+                      {keyStatus.OPENAI_API_KEY ? 'Active' : 'Not Set'}
+                    </span>
                   </div>
-                  <input
+                  <input 
                     type="password"
+                    id="openai-key"
                     name="OPENAI_API_KEY"
+                    placeholder="sk-..."
                     value={apiKeys.OPENAI_API_KEY}
                     onChange={handleApiKeyChange}
-                    placeholder={keyStatus.openai ? "(저장된 키 있음)" : "sk-..."}
+                    autoComplete="off"
                   />
-                </label>
-                <div className="key-help">
-                  Required for GPT models. <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">Get API key</a>
+                  <div className="key-help">For models like GPT-4 and GPT-3.5</div>
                 </div>
-              </div>
-              
-              <div className="api-key-group">
-                <label>
+                
+                <div className="api-key-group">
                   <div className="key-label">
-                    <span>Anthropic API Key</span>
-                    {keyStatus.anthropic && <span className="key-status active">Active</span>}
+                    <label htmlFor="anthropic-key">Anthropic API Key</label>
+                    <span className={`key-status ${keyStatus.ANTHROPIC_API_KEY ? 'active' : ''}`}>
+                      {keyStatus.ANTHROPIC_API_KEY ? 'Active' : 'Not Set'}
+                    </span>
                   </div>
-                  <input
+                  <input 
                     type="password"
+                    id="anthropic-key"
                     name="ANTHROPIC_API_KEY"
+                    placeholder="sk-ant-..."
                     value={apiKeys.ANTHROPIC_API_KEY}
                     onChange={handleApiKeyChange}
-                    placeholder={keyStatus.anthropic ? "(저장된 키 있음)" : "sk-ant-..."}
+                    autoComplete="off"
                   />
-                </label>
-                <div className="key-help">
-                  Required for Claude models. <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">Get API key</a>
+                  <div className="key-help">For Claude models</div>
                 </div>
-              </div>
-              
-              <div className="api-key-group">
-                <label>
+                
+                <div className="api-key-group">
                   <div className="key-label">
-                    <span>Google AI API Key</span>
-                    {keyStatus.google && <span className="key-status active">Active</span>}
+                    <label htmlFor="google-key">Google AI API Key</label>
+                    <span className={`key-status ${keyStatus.GENAI_API_KEY ? 'active' : ''}`}>
+                      {keyStatus.GENAI_API_KEY ? 'Active' : 'Not Set'}
+                    </span>
                   </div>
-                  <input
+                  <input 
                     type="password"
+                    id="google-key"
                     name="GENAI_API_KEY"
+                    placeholder="API Key"
                     value={apiKeys.GENAI_API_KEY}
                     onChange={handleApiKeyChange}
-                    placeholder={keyStatus.google ? "(저장된 키 있음)" : "AI..."}
+                    autoComplete="off"
                   />
-                </label>
-                <div className="key-help">
-                  Required for Gemini models. <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Get API key</a>
+                  <div className="key-help">For Gemini models</div>
                 </div>
-              </div>
-              
-              <div className="api-key-group">
-                <label>
+                
+                <div className="api-key-group">
                   <div className="key-label">
-                    <span>xAI API Key</span>
-                    {keyStatus.xai && <span className="key-status active">Active</span>}
+                    <label htmlFor="xai-key">x.AI API Key</label>
+                    <span className={`key-status ${keyStatus.XAI_API_KEY ? 'active' : ''}`}>
+                      {keyStatus.XAI_API_KEY ? 'Active' : 'Not Set'}
+                    </span>
                   </div>
-                  <input
+                  <input 
                     type="password"
+                    id="xai-key"
                     name="XAI_API_KEY"
+                    placeholder="API Key"
                     value={apiKeys.XAI_API_KEY}
                     onChange={handleApiKeyChange}
-                    placeholder={keyStatus.xai ? "(저장된 키 있음)" : "Enter your xAI API key"}
+                    autoComplete="off"
                   />
-                </label>
-                <div className="key-help">
-                  Required for Grok models. Get your API key from the xAI website.
+                  <div className="key-help">For Grok models</div>
                 </div>
+                
+                <button 
+                  type="submit" 
+                  className="primary-button"
+                  disabled={saving}
+                >
+                  {saving ? 'Saving...' : 'Save API Keys'}
+                </button>
+              </form>
+            </div>
+          </section>
+        )}
+        
+        {activeTab === 'appearance' && (
+          <section className="settings-section">
+            <h2>Appearance</h2>
+            <p className="settings-description">
+              Customize the look and feel of the application.
+            </p>
+            
+            <div className="appearance-settings">
+              <h3>Theme</h3>
+              <div className="theme-selector">
+                <button 
+                  className={`theme-button ${theme === 'light' ? 'active' : ''}`}
+                  onClick={() => setTheme('light')}
+                >
+                  <span className="theme-icon">☀️</span>
+                  <span>Light</span>
+                </button>
+                <button 
+                  className={`theme-button ${theme === 'dark' ? 'active' : ''}`}
+                  onClick={() => setTheme('dark')}
+                >
+                  <span className="theme-icon">🌙</span>
+                  <span>Dark</span>
+                </button>
+                <button 
+                  className={`theme-button ${theme === 'system' ? 'active' : ''}`}
+                  onClick={() => setTheme('system')}
+                >
+                  <span className="theme-icon">💻</span>
+                  <span>System</span>
+                </button>
               </div>
               
-              <button 
-                type="submit" 
-                className="primary-button"
-                disabled={saving}
-              >
-                {saving ? 'Saving...' : 'Save API Keys'}
-              </button>
-            </form>
-          </div>
-        </section>
-      )}
-      
-      {activeTab === 'appearance' && (
-        <section className="settings-section">
-          <h2>Appearance Settings</h2>
-          
-          <div className="appearance-settings">
-            <h3>Theme</h3>
-            <p className="settings-description">Choose between light and dark mode for the application.</p>
-            <div className="theme-selector">
-              <button 
-                className={`theme-button ${theme === 'light' ? 'active' : ''}`}
-                onClick={() => setTheme('light')}
-              >
-                <span className="theme-icon">☀️</span>
-                Light
-              </button>
-              <button 
-                className={`theme-button ${theme === 'dark' ? 'active' : ''}`}
-                onClick={() => setTheme('dark')}
-              >
-                <span className="theme-icon">🌙</span>
-                Dark
-              </button>
-            </div>
-            
-            <div className="theme-preview">
-              <div className="theme-preview-light">
-                <div className="preview-label">Light Mode</div>
-                <div className="preview-box light-preview"></div>
-              </div>
-              <div className="theme-preview-dark">
-                <div className="preview-label">Dark Mode</div>
-                <div className="preview-box dark-preview"></div>
+              <div className="theme-preview">
+                <div className="preview-label">Preview:</div>
+                <div className={`preview-box ${theme === 'dark' ? 'dark-preview' : 'light-preview'}`}>
+                  <div className="preview-content">
+                    Theme preview
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
-      )}
+          </section>
+        )}
+      </div>
     </div>
   );
 };

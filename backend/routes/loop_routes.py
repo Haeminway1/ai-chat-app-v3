@@ -66,8 +66,9 @@ def add_participant(loop_id):
     
     system_prompt = data.get('system_prompt', '')
     display_name = data.get('display_name')
+    user_prompt = data.get('user_prompt', '')
     
-    result = loop_service.add_participant(loop_id, data['model'], system_prompt, display_name)
+    result = loop_service.add_participant(loop_id, data['model'], system_prompt, display_name, user_prompt)
     
     if not result:
         return jsonify({"error": "Loop not found"}), 404
@@ -88,8 +89,8 @@ def update_participant(loop_id, participant_id):
     if not data:
         return jsonify({"error": "No data provided"}), 400
     
-    # Filter valid updates
-    valid_fields = {'model', 'system_prompt', 'display_name'}
+    # Filter valid updates - added user_prompt to valid fields
+    valid_fields = {'model', 'system_prompt', 'display_name', 'user_prompt'}
     updates = {k: v for k, v in data.items() if k in valid_fields}
     
     result = loop_service.update_participant(loop_id, participant_id, updates)
@@ -204,4 +205,97 @@ def reset_loop(loop_id):
     return jsonify({
         "status": "success",
         "loop": loop.to_dict()
+    })
+
+@loop_bp.route('/<loop_id>/loop_prompt', methods=['PUT'])
+def update_loop_prompt(loop_id):
+    """Update the loop user prompt"""
+    data = request.json
+    
+    if not data or 'loop_user_prompt' not in data:
+        return jsonify({"error": "No loop_user_prompt provided"}), 400
+    
+    loop = loop_service.update_loop_prompt(loop_id, data['loop_user_prompt'])
+    
+    if not loop:
+        return jsonify({"error": "Loop not found"}), 404
+    
+    return jsonify({
+        "status": "success",
+        "loop": loop.to_dict()
+    })
+
+@loop_bp.route('/<loop_id>/stop_sequence', methods=['POST'])
+def add_stop_sequence(loop_id):
+    """Add a stop sequence to a loop"""
+    data = request.json
+    
+    if not data or 'model' not in data:
+        return jsonify({"error": "Model not provided"}), 400
+    
+    system_prompt = data.get('system_prompt', '')
+    display_name = data.get('display_name')
+    stop_condition = data.get('stop_condition', '')
+    
+    result = loop_service.add_stop_sequence(loop_id, data['model'], system_prompt, display_name, stop_condition)
+    
+    if not result:
+        return jsonify({"error": "Loop not found"}), 404
+    
+    return jsonify({
+        "status": "success",
+        "loop": result["loop"].to_dict()
+    })
+
+@loop_bp.route('/<loop_id>/stop_sequence/<stop_sequence_id>', methods=['PUT'])
+def update_stop_sequence(loop_id, stop_sequence_id):
+    """Update a stop sequence in a loop"""
+    data = request.json
+    
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+    
+    # Filter valid updates
+    valid_fields = {'model', 'system_prompt', 'display_name', 'stop_condition'}
+    updates = {k: v for k, v in data.items() if k in valid_fields}
+    
+    result = loop_service.update_stop_sequence(loop_id, stop_sequence_id, updates)
+    
+    if not result:
+        return jsonify({"error": "Loop or stop sequence not found"}), 404
+    
+    return jsonify({
+        "status": "success",
+        "loop": result["loop"].to_dict()
+    })
+
+@loop_bp.route('/<loop_id>/stop_sequence/<stop_sequence_id>', methods=['DELETE'])
+def remove_stop_sequence(loop_id, stop_sequence_id):
+    """Remove a stop sequence from a loop"""
+    result = loop_service.remove_stop_sequence(loop_id, stop_sequence_id)
+    
+    if not result:
+        return jsonify({"error": "Loop or stop sequence not found"}), 404
+    
+    return jsonify({
+        "status": "success",
+        "loop": result["loop"].to_dict()
+    })
+
+@loop_bp.route('/<loop_id>/reorder_stop_sequences', methods=['POST'])
+def reorder_stop_sequences(loop_id):
+    """Reorder stop sequences in a loop"""
+    data = request.json
+    
+    if not data or 'stop_sequence_ids' not in data:
+        return jsonify({"error": "No stop_sequence_ids provided"}), 400
+    
+    result = loop_service.reorder_stop_sequences(loop_id, data['stop_sequence_ids'])
+    
+    if not result:
+        return jsonify({"error": "Loop not found"}), 404
+    
+    return jsonify({
+        "status": "success",
+        "loop": result["loop"].to_dict()
     })

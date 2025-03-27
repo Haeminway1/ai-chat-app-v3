@@ -9,41 +9,73 @@
 /* Base theme variables (light theme) */
 :root {
   --primary-color: #3b82f6;
+  --primary-color-rgb: 59, 130, 246;
   --primary-hover: #2563eb;
+  --primary-color-transparent: rgba(59, 130, 246, 0.2);
+  --primary-color-hover: #2563eb;
   --secondary-color: #64748b;
+  --secondary-color-rgb: 100, 116, 139;
   --background-color: #f8fafc;
+  --background-color-rgb: 248, 250, 252;
   --chat-background: #ffffff;
+  --chat-background-rgb: 255, 255, 255;
   --text-color: #1e293b;
+  --text-color-rgb: 30, 41, 59;
   --border-color: #e2e8f0;
+  --border-color-rgb: 226, 232, 240;
   --sidebar-color: #f1f5f9;
+  --sidebar-color-rgb: 241, 245, 249;
   --hover-color: #e2e8f0;
+  --hover-color-rgb: 226, 232, 240;
   --message-user: #f1f5f9;
   --message-assistant: #ffffff;
   --error-color: #ef4444;
+  --error-color-rgb: 239, 68, 68;
   --success-color: #10b981;
+  --success-color-rgb: 16, 185, 129;
   --input-background: #ffffff;
+  --input-bg-color: #ffffff;
+  --disabled-color: #94a3b8;
   --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   --card-background: #ffffff;
+  --bg-color: #f8fafc;
 }
 
 /* Dark theme */
 [data-theme='dark'] {
   --primary-color: #3b82f6;
+  --primary-color-rgb: 59, 130, 246;
   --primary-hover: #60a5fa;
+  --primary-color-transparent: rgba(59, 130, 246, 0.2);
+  --primary-color-hover: #60a5fa;
   --secondary-color: #94a3b8;
+  --secondary-color-rgb: 148, 163, 184;
   --background-color: #0f172a;
+  --background-color-rgb: 15, 23, 42;
   --chat-background: #1e293b;
+  --chat-background-rgb: 30, 41, 59;
   --text-color: #e2e8f0;
+  --text-color-rgb: 226, 232, 240;
   --border-color: #334155;
+  --border-color-rgb: 51, 65, 85;
   --sidebar-color: #1e293b;
+  --sidebar-color-rgb: 30, 41, 59;
   --hover-color: #334155;
+  --hover-color-rgb: 51, 65, 85;
   --message-user: #334155;
   --message-assistant: #1e293b;
   --error-color: #f87171;
+  --error-color-rgb: 248, 113, 113;
   --success-color: #34d399;
+  --success-color-rgb: 52, 211, 153;
   --input-background: #1e293b;
+  --input-bg-color: #1e293b;
+  --disabled-color: #64748b;
   --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   --card-background: #1e293b;
+  --bg-color: #0f172a;
+  --dark-input-bg: #1e293b;
+  --dark-border-color: #334155;
 }
 
 /* Additional styles for dark mode */

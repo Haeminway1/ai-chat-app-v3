@@ -1,91 +1,94 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { FiSettings, FiRefreshCw } from 'react-icons/fi';
+import { useLoop } from '../../contexts/LoopContext';
 import './LoopHeader.css';
 
-const LoopHeader = ({ loop, onTitleChange, onSettingsClick }) => {
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [newTitle, setNewTitle] = useState(loop?.title || '');
+const LoopHeader = () => {
+  const { currentLoop, updateLoopTitle } = useLoop();
+  const [isEditing, setIsEditing] = useState(false);
+  const [title, setTitle] = useState('');
+  const inputRef = useRef(null);
 
-  const handleStartEditTitle = () => {
-    setNewTitle(loop?.title || '');
-    setIsEditingTitle(true);
-  };
-
-  const handleSaveTitle = async () => {
-    if (newTitle.trim()) {
-      await onTitleChange(newTitle.trim());
-      setIsEditingTitle(false);
+  useEffect(() => {
+    if (currentLoop) {
+      setTitle(currentLoop.title || 'Untitled Loop');
     }
+  }, [currentLoop]);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  const handleTitleClick = () => {
+    setIsEditing(true);
   };
 
-  const handleTitleKeyDown = (e) => {
+  const handleTitleChange = (e) => {
+    setTitle(e.target.value);
+  };
+
+  const handleSaveTitle = () => {
+    if (currentLoop && title.trim() !== '') {
+      updateLoopTitle(title.trim());
+    }
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       handleSaveTitle();
     } else if (e.key === 'Escape') {
-      setIsEditingTitle(false);
-      setNewTitle(loop?.title || '');
+      setTitle(currentLoop?.title || 'Untitled Loop');
+      setIsEditing(false);
     }
   };
 
-  if (!loop) return null;
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'running':
-        return 'Running';
-      case 'paused':
-        return 'Paused';
-      case 'stopped':
-        return 'Stopped';
-      default:
-        return 'Ready';
-    }
+  const handleCancelEdit = () => {
+    setTitle(currentLoop?.title || 'Untitled Loop');
+    setIsEditing(false);
   };
 
-  const getStatusClass = (status) => {
-    switch (status) {
-      case 'running':
-        return 'status-running';
-      case 'paused':
-        return 'status-paused';
-      case 'stopped':
-        return 'status-stopped';
-      default:
-        return '';
-    }
-  };
+  if (!currentLoop) return null;
 
   return (
     <div className="loop-header">
-      <div className="loop-title-section">
-        {isEditingTitle ? (
-          <input
-            type="text"
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            onBlur={handleSaveTitle}
-            onKeyDown={handleTitleKeyDown}
-            autoFocus
-            className="loop-title-input"
-          />
+      <div className="loop-title-container">
+        <FiRefreshCw className="loop-icon" />
+        {isEditing ? (
+          <>
+            <input
+              ref={inputRef}
+              type="text"
+              className="loop-title-editable"
+              value={title}
+              onChange={handleTitleChange}
+              onKeyDown={handleKeyDown}
+              onBlur={handleSaveTitle}
+              placeholder="Enter loop title"
+              maxLength={60}
+            />
+            <div className="title-edit-controls">
+              <button className="save-button" onClick={handleSaveTitle}>
+                Save
+              </button>
+              <button className="cancel-button" onClick={handleCancelEdit}>
+                Cancel
+              </button>
+            </div>
+          </>
         ) : (
-          <h2 className="loop-title-display" onClick={handleStartEditTitle}>{loop.title}</h2>
+          <h1 className="loop-title" onClick={handleTitleClick}>
+            {title || 'Untitled Loop'}
+          </h1>
         )}
       </div>
       
-      <div className="loop-status-section">
-        <div className={`loop-status ${getStatusClass(loop.status)}`}>
-          <span className="status-indicator"></span>
-          <span className="status-text">{getStatusText(loop.status)}</span>
-        </div>
-        <div className="participant-count">
-          {loop.participants.length} participant{loop.participants.length !== 1 ? 's' : ''}
-        </div>
-        <button 
-          className="settings-button" 
-          title="Settings"
-          onClick={onSettingsClick}
-        >
-          ⚙️
+      <div className="loop-controls-container">
+        <button className="loop-actions-button">
+          <FiSettings />
         </button>
       </div>
     </div>

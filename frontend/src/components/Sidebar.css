@@ -55,37 +55,6 @@
   padding: 0.25rem;
 }
 
-.sidebar-tabs {
-  display: flex;
-  padding: 0 1rem;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.sidebar-tab {
-  flex: 1;
-  padding: 0.5rem;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  font-weight: 500;
-  color: var(--secondary-color);
-  transition: all 0.2s ease;
-}
-
-.sidebar-tab.active {
-  color: var(--primary-color);
-  border-bottom-color: var(--primary-color);
-}
-
-.sidebar-tab:hover:not(.active) {
-  background-color: var(--hover-color);
-}
-
-.sidebar.collapsed .sidebar-tabs {
-  display: none;
-}
-
 .new-chat-button {
   width: calc(100% - 2rem);
   margin: 0.5rem 1rem;
@@ -151,18 +120,6 @@
 .model-selector select {
   background-color: var(--input-background);
   font-weight: 500;
-}
-
-.json-mode-toggle {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-}
-
-.json-mode-toggle input {
-  margin-right: 0.5rem;
 }
 
 .chats-container {
