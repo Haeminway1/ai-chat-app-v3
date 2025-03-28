@@ -20,16 +20,30 @@ export const deleteLoop = (loopId) => {
   return api.delete(`/loop/${loopId}`);
 };
 
-export const addParticipant = (loopId, model, systemPrompt = '', displayName = null) => {
+export const addParticipant = (loopId, model, systemPrompt = '', displayName = null, userPrompt = '') => {
   return api.post(`/loop/${loopId}/participant`, { 
     model, 
     system_prompt: systemPrompt,
+    user_prompt: userPrompt,
     display_name: displayName
   });
 };
 
 export const updateParticipant = (loopId, participantId, updates) => {
-  return api.put(`/loop/${loopId}/participant/${participantId}`, updates);
+  // Ensure proper field names for backend
+  const apiData = {
+    ...updates,
+    // Map any frontend names to backend names 
+    model: updates.model,
+    system_prompt: updates.system_prompt,
+    user_prompt: updates.user_prompt,
+    display_name: updates.display_name,
+    max_tokens: updates.max_tokens,
+    temperature: updates.temperature
+  };
+  
+  console.log(`API call to update participant ${participantId} in loop ${loopId}:`, apiData);
+  return api.put(`/loop/${loopId}/participant/${participantId}`, apiData);
 };
 
 export const removeParticipant = (loopId, participantId) => {
@@ -60,27 +74,8 @@ export const resetLoop = (loopId) => {
   return api.post(`/loop/${loopId}/reset`);
 };
 
-export const updateLoopUserPrompt = async (loopId, loopUserPrompt) => {
-  try {
-    const response = await fetch(`/api/loop/${loopId}/loop_prompt`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ loop_user_prompt: loopUserPrompt }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to update loop user prompt');
-    }
-
-    const data = await response.json();
-    return data.loop;
-  } catch (error) {
-    console.error('Error updating loop user prompt:', error);
-    throw error;
-  }
+export const updateLoopUserPrompt = (loopId, loopUserPrompt) => {
+  return api.put(`/loop/${loopId}/loop_prompt`, { loop_user_prompt: loopUserPrompt });
 };
 
 export const addStopSequence = (loopId, model, systemPrompt = '', displayName = null, stopCondition = '') => {
@@ -93,7 +88,20 @@ export const addStopSequence = (loopId, model, systemPrompt = '', displayName = 
 };
 
 export const updateStopSequence = (loopId, stopSequenceId, updates) => {
-  return api.put(`/loop/${loopId}/stop_sequence/${stopSequenceId}`, updates);
+  // Ensure proper field names for backend
+  const apiData = {
+    ...updates,
+    // Map any frontend names to backend names
+    model: updates.model,
+    system_prompt: updates.system_prompt,
+    display_name: updates.display_name,
+    stop_condition: updates.stop_condition,
+    max_tokens: updates.max_tokens,
+    temperature: updates.temperature
+  };
+  
+  console.log(`API call to update stop sequence ${stopSequenceId} in loop ${loopId}:`, apiData);
+  return api.put(`/loop/${loopId}/stop_sequence/${stopSequenceId}`, apiData);
 };
 
 export const removeStopSequence = (loopId, stopSequenceId) => {

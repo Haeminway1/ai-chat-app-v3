@@ -61,7 +61,27 @@ export const LoopProvider = ({ children }) => {
     if (!loopId) return null;
     
     // If current loop is already loaded and matches the requested id, return it
+    // but continue loading in the background to update it
     if (currentLoop && currentLoop.id === loopId && lastLoadedLoopId === loopId) {
+      // Load in background to update, but don't show loading state
+      getLoop(loopId).then(updatedLoop => {
+        if (updatedLoop) {
+          // Only update if there are meaningful changes to avoid unnecessary renders
+          if (hasLoopContentChanged(currentLoop, updatedLoop)) {
+            setCurrentLoop(updatedLoop);
+            
+            // Update loop in the list
+            if (loopsLoaded) {
+              setLoops(prevLoops => 
+                prevLoops.map(l => l.id === loopId ? updatedLoop : l)
+              );
+            }
+          }
+        }
+      }).catch(error => {
+        console.error("Background loop update failed:", error);
+      });
+      
       return currentLoop;
     }
     
@@ -86,18 +106,6 @@ export const LoopProvider = ({ children }) => {
         
         // Set isRunning based on loop status
         setIsRunning(loop.status === 'running');
-        
-        // Set up polling if loop is running
-        if (loop.status === 'running' && !updateInterval) {
-          const intervalId = setInterval(() => {
-            getLoop(loopId).then(updatedLoop => {
-              if (updatedLoop) {
-                setCurrentLoop(updatedLoop);
-              }
-            });
-          }, 2000); // Poll every 2 seconds
-          setUpdateInterval(intervalId);
-        }
       }
       return loop;
     } catch (error) {
@@ -107,6 +115,38 @@ export const LoopProvider = ({ children }) => {
       setLoadingLoop(false);
     }
   }, [currentLoop, lastLoadedLoopId, loops, loopsLoaded, updateInterval]);
+
+  // Helper function to determine if loop content has meaningfully changed
+  const hasLoopContentChanged = (oldLoop, newLoop) => {
+    // Check if messages have changed (different count or different content)
+    if (!oldLoop || !newLoop) return true;
+    
+    if (oldLoop.messages?.length !== newLoop.messages?.length) {
+      return true;
+    }
+    
+    // Check if status changed
+    if (oldLoop.status !== newLoop.status) {
+      return true;
+    }
+    
+    // For large message sets, just compare the last message to avoid deep comparison of all messages
+    if (newLoop.messages?.length > 0) {
+      const oldLastMsg = oldLoop.messages[oldLoop.messages.length - 1];
+      const newLastMsg = newLoop.messages[newLoop.messages.length - 1];
+      
+      if (!oldLastMsg || !newLastMsg) return true;
+      
+      // Check content and timestamp
+      if (oldLastMsg.content !== newLastMsg.content || 
+          oldLastMsg.timestamp !== newLastMsg.timestamp) {
+        return true;
+      }
+    }
+    
+    // No significant changes detected
+    return false;
+  };
 
   const createNewLoop = async (title) => {
     setLoading(true);
@@ -180,10 +220,10 @@ export const LoopProvider = ({ children }) => {
     }
   };
 
-  const addNewParticipant = async (loopId, model, systemPrompt = '', displayName = null) => {
+  const addNewParticipant = async (loopId, model, systemPrompt = '', displayName = null, userPrompt = '') => {
     setLoading(true);
     try {
-      const result = await addParticipant(loopId, model, systemPrompt, displayName);
+      const result = await addParticipant(loopId, model, systemPrompt, displayName, userPrompt);
       if (result && result.loop) {
         // Update currentLoop
         if (currentLoop && currentLoop.id === loopId) {
@@ -208,20 +248,48 @@ export const LoopProvider = ({ children }) => {
 
   const updateLoopParticipant = async (loopId, participantId, updates) => {
     setLoading(true);
+    
+    // Temporarily pause polling to prevent stale data overwriting our update
+    const wasPaused = !!updateInterval;
+    if (updateInterval) {
+      clearInterval(updateInterval);
+      setUpdateInterval(null);
+    }
+    
     try {
-      const result = await updateParticipant(loopId, participantId, updates);
+      // Ensure field names match what backend expects
+      const apiUpdates = {
+        ...updates,
+        // Convert model options properly
+        model: updates.model,
+        system_prompt: updates.system_prompt, 
+        user_prompt: updates.user_prompt,
+        display_name: updates.display_name,
+        max_tokens: updates.max_tokens,
+        temperature: updates.temperature
+      };
+      
+      console.log('Sending participant update to API:', apiUpdates);
+      const result = await updateParticipant(loopId, participantId, apiUpdates);
+      
       if (result && result.loop) {
+        // Deep copy current loop to avoid reference issues
+        const updatedLoop = JSON.parse(JSON.stringify(result.loop));
+        
         // Update currentLoop
         if (currentLoop && currentLoop.id === loopId) {
-          setCurrentLoop(result.loop);
+          setCurrentLoop(updatedLoop);
         }
         
         // Update loop in the list
         if (loopsLoaded) {
           setLoops(prevLoops => 
-            prevLoops.map(l => l.id === loopId ? result.loop : l)
+            prevLoops.map(l => l.id === loopId ? updatedLoop : l)
           );
         }
+        
+        // Wait a moment before resuming polling to ensure update is processed
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
       return result;
     } catch (error) {
@@ -229,6 +297,14 @@ export const LoopProvider = ({ children }) => {
       return null;
     } finally {
       setLoading(false);
+      
+      // Resume polling if it was active before
+      if (wasPaused && currentLoop && currentLoop.id) {
+        const intervalId = setInterval(() => {
+          loadLoop(currentLoop.id);
+        }, currentLoop.status === 'running' ? 500 : 2000);
+        setUpdateInterval(intervalId);
+      }
     }
   };
 
@@ -312,20 +388,48 @@ export const LoopProvider = ({ children }) => {
 
   const updateLoopStopSequence = async (loopId, stopSequenceId, updates) => {
     setLoading(true);
+    
+    // Temporarily pause polling to prevent stale data overwriting our update
+    const wasPaused = !!updateInterval;
+    if (updateInterval) {
+      clearInterval(updateInterval);
+      setUpdateInterval(null);
+    }
+    
     try {
-      const result = await updateStopSequence(loopId, stopSequenceId, updates);
+      // Ensure field names match what backend expects
+      const apiUpdates = {
+        ...updates,
+        // Convert model options properly
+        model: updates.model,
+        system_prompt: updates.system_prompt,
+        display_name: updates.display_name,
+        stop_condition: updates.stop_condition,
+        max_tokens: updates.max_tokens,
+        temperature: updates.temperature
+      };
+      
+      console.log('Sending stop sequence update to API:', apiUpdates);
+      const result = await updateStopSequence(loopId, stopSequenceId, apiUpdates);
+      
       if (result && result.loop) {
+        // Deep copy current loop to avoid reference issues
+        const updatedLoop = JSON.parse(JSON.stringify(result.loop));
+        
         // Update currentLoop
         if (currentLoop && currentLoop.id === loopId) {
-          setCurrentLoop(result.loop);
+          setCurrentLoop(updatedLoop);
         }
         
         // Update loop in the list
         if (loopsLoaded) {
           setLoops(prevLoops => 
-            prevLoops.map(l => l.id === loopId ? result.loop : l)
+            prevLoops.map(l => l.id === loopId ? updatedLoop : l)
           );
         }
+        
+        // Wait a moment before resuming polling to ensure update is processed
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
       return result;
     } catch (error) {
@@ -333,6 +437,14 @@ export const LoopProvider = ({ children }) => {
       return null;
     } finally {
       setLoading(false);
+      
+      // Resume polling if it was active before
+      if (wasPaused && currentLoop && currentLoop.id) {
+        const intervalId = setInterval(() => {
+          loadLoop(currentLoop.id);
+        }, currentLoop.status === 'running' ? 500 : 2000);
+        setUpdateInterval(intervalId);
+      }
     }
   };
 
@@ -664,114 +776,22 @@ export const LoopProvider = ({ children }) => {
     createNewLoop,
     updateLoopName,
     removeLoop,
-    addNewParticipant,
-    updateLoopParticipant,
-    removeLoopParticipant,
-    reorderLoopParticipants,
+    addParticipant: addNewParticipant,
+    updateParticipant: updateLoopParticipant,
+    removeParticipant: removeLoopParticipant,
+    reorderParticipants: reorderLoopParticipants,
     startLoopWithPrompt,
     pauseCurrentLoop,
     resumeCurrentLoop,
     stopCurrentLoop,
     resetCurrentLoop,
     updateLoopUserPrompt,
-    // Add stop sequence functions
-    addNewStopSequence,
-    updateLoopStopSequence,
-    removeLoopStopSequence,
-    reorderLoopStopSequences,
-    // Add wrapper for removeParticipant to match function name in ParticipantsList
-    removeParticipant: (index) => {
-      if (!currentLoop || !currentLoop.participants || index >= currentLoop.participants.length) return null;
-      const participantId = currentLoop.participants[index].id;
-      return removeLoopParticipant(currentLoop.id, participantId);
-    },
-    // Add helper functions for modern interface
-    addParticipant: () => {
-      if (!currentLoop) return null;
-      const defaultModel = "gpt-4o";
-      const displayName = `AI ${currentLoop.participants.length + 1}`;
-      return addNewParticipant(currentLoop.id, defaultModel, "", displayName);
-    },
-    updateParticipant: (index, updatedData) => {
-      if (!currentLoop || !currentLoop.participants || index >= currentLoop.participants.length) return null;
-      const participantId = currentLoop.participants[index].id;
-      return updateLoopParticipant(currentLoop.id, participantId, updatedData);
-    },
-    // Add stop sequence convenience functions
-    addStopSequence: () => {
-      if (!currentLoop) return null;
-      const defaultModel = "gpt-4o";
-      const displayName = `Stop Sequence ${currentLoop.stop_sequences?.length + 1 || 1}`;
-      return addNewStopSequence(currentLoop.id, defaultModel, "", displayName, "");
-    },
-    removeStopSequence: (index) => {
-      if (!currentLoop || !currentLoop.stop_sequences || index >= currentLoop.stop_sequences.length) return null;
-      const stopSequenceId = currentLoop.stop_sequences[index].id;
-      return removeLoopStopSequence(currentLoop.id, stopSequenceId);
-    },
-    updateStopSequence: (index, updatedData) => {
-      if (!currentLoop || !currentLoop.stop_sequences || index >= currentLoop.stop_sequences.length) return null;
-      const stopSequenceId = currentLoop.stop_sequences[index].id;
-      return updateLoopStopSequence(currentLoop.id, stopSequenceId, updatedData);
-    },
-    moveStopSequenceUp: (index) => {
-      if (!currentLoop || !currentLoop.stop_sequences || index <= 0) return null;
-      
-      // Get all stop sequence IDs in current order
-      const stopSequenceIds = [...currentLoop.stop_sequences]
-        .sort((a, b) => a.order_index - b.order_index)
-        .map(s => s.id);
-      
-      // Swap with previous item
-      [stopSequenceIds[index], stopSequenceIds[index-1]] = [stopSequenceIds[index-1], stopSequenceIds[index]];
-      
-      // Update order on the server
-      return reorderLoopStopSequences(currentLoop.id, stopSequenceIds);
-    },
-    moveStopSequenceDown: (index) => {
-      if (!currentLoop || !currentLoop.stop_sequences || index >= currentLoop.stop_sequences.length - 1) return null;
-      
-      // Get all stop sequence IDs in current order
-      const stopSequenceIds = [...currentLoop.stop_sequences]
-        .sort((a, b) => a.order_index - b.order_index)
-        .map(s => s.id);
-      
-      // Swap with next item
-      [stopSequenceIds[index], stopSequenceIds[index+1]] = [stopSequenceIds[index+1], stopSequenceIds[index]];
-      
-      // Update order on the server
-      return reorderLoopStopSequences(currentLoop.id, stopSequenceIds);
-    },
-    moveParticipantUp: (index) => {
-      if (!currentLoop || !currentLoop.participants || index <= 0) return null;
-      
-      // Get all participant IDs in current order
-      const participantIds = [...currentLoop.participants]
-        .sort((a, b) => a.order_index - b.order_index)
-        .map(p => p.id);
-      
-      // Swap with previous item
-      [participantIds[index], participantIds[index-1]] = [participantIds[index-1], participantIds[index]];
-      
-      // Update order on the server
-      return reorderLoopParticipants(currentLoop.id, participantIds);
-    },
-    moveParticipantDown: (index) => {
-      if (!currentLoop || !currentLoop.participants || index >= currentLoop.participants.length - 1) return null;
-      
-      // Get all participant IDs in current order
-      const participantIds = [...currentLoop.participants]
-        .sort((a, b) => a.order_index - b.order_index)
-        .map(p => p.id);
-      
-      // Swap with next item
-      [participantIds[index], participantIds[index+1]] = [participantIds[index+1], participantIds[index]];
-      
-      // Update order on the server
-      return reorderLoopParticipants(currentLoop.id, participantIds);
-    },
-    isLoopRunning: currentLoop?.status === 'running',
-    isLoopPaused: currentLoop?.status === 'paused'
+    addStopSequence: addNewStopSequence,
+    updateStopSequence: updateLoopStopSequence,
+    removeStopSequence: removeLoopStopSequence,
+    reorderStopSequences: reorderLoopStopSequences,
+    updateLoopParticipant,
+    removeLoopParticipant
   };
 
   return (

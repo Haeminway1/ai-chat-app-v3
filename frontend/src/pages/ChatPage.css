@@ -31,7 +31,7 @@
 }
 
 .header-spacer {
-  height: 80px;  /* Make sure there's enough room for the navigation */
+  height: 60px;
   flex-shrink: 0;
 }
 
@@ -41,10 +41,9 @@
 
 .chat-container {
   width: 90%;
-  max-width: 1400px;
-  height: calc(100% - 80px);
-  margin: 0 auto;
-  margin-top: 80px;
+  max-width: 1200px;
+  height: calc(100% - 70px);
+  margin: 10px auto 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -109,7 +108,7 @@
 .messages-container {
   flex: 1 1 auto;
   overflow-y: auto !important;
-  padding: 1.5rem 1rem;
+  padding: 16px 24px;
   scrollbar-width: thin;
   scrollbar-color: var(--secondary-color) transparent;
   display: flex;
@@ -118,6 +117,7 @@
   position: relative;
   height: auto;
   width: 100%;
+  box-sizing: border-box;
 }
 
 [data-theme='blackmyth'] .messages-container::-webkit-scrollbar-thumb {
@@ -162,8 +162,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: calc(100% - 80px); /* Adjust for header spacer */
-  margin-top: 80px; /* Match header spacer */
+  height: calc(100% - 70px);
+  margin-top: 10px;
   gap: 1rem;
   color: var(--secondary-color);
   text-align: center;

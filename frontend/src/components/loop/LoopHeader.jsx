@@ -1,18 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLoop } from '../../contexts/LoopContext';
 import './LoopHeader.css';
 
-const LoopHeader = () => {
-  const { currentLoop, updateLoopTitle } = useLoop();
+const LoopHeader = ({ loop, onTitleChange }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState('');
   const inputRef = useRef(null);
 
   useEffect(() => {
-    if (currentLoop) {
-      setTitle(currentLoop.title || 'Untitled Loop');
+    if (loop) {
+      setTitle(loop.title || 'Untitled Loop');
     }
-  }, [currentLoop]);
+  }, [loop]);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -30,8 +28,8 @@ const LoopHeader = () => {
   };
 
   const handleSaveTitle = () => {
-    if (currentLoop && title.trim() !== '') {
-      updateLoopTitle(title.trim());
+    if (loop && title.trim() !== '' && onTitleChange) {
+      onTitleChange(title.trim());
     }
     setIsEditing(false);
   };
@@ -40,17 +38,17 @@ const LoopHeader = () => {
     if (e.key === 'Enter') {
       handleSaveTitle();
     } else if (e.key === 'Escape') {
-      setTitle(currentLoop?.title || 'Untitled Loop');
+      setTitle(loop?.title || 'Untitled Loop');
       setIsEditing(false);
     }
   };
 
   const handleCancelEdit = () => {
-    setTitle(currentLoop?.title || 'Untitled Loop');
+    setTitle(loop?.title || 'Untitled Loop');
     setIsEditing(false);
   };
 
-  if (!currentLoop) return null;
+  if (!loop) return null;
 
   return (
     <div className="loop-header">

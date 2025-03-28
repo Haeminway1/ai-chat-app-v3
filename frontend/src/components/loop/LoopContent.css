@@ -3,7 +3,7 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .loop-tabs {
@@ -44,6 +44,7 @@
 .loop-tab-content {
   flex-grow: 1;
   overflow-y: auto;
+  overflow-x: visible;
   width: 100%;
   box-sizing: border-box;
   padding: 20px;
@@ -55,12 +56,13 @@
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  overflow-x: hidden;
+  overflow-x: visible;
 }
 
 .setup-container {
   height: calc(100vh - 200px);
   overflow-y: auto;
+  overflow-x: visible;
   padding-right: 10px;
 }
 

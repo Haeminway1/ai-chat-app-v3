@@ -90,16 +90,24 @@ const LoopPage = () => {
   useEffect(() => {
     let pollInterval = null;
     
+    // Function to safely load the loop data
+    const fetchLoopData = async () => {
+      try {
+        await loadLoop(loopId);
+      } catch (error) {
+        console.error("Error polling loop data:", error);
+      }
+    };
+    
     if (currentLoop?.status === 'running' && loopId) {
-      // Poll more frequently to get real-time updates (every 500ms)
-      pollInterval = setInterval(() => {
-        loadLoop(loopId);
-      }, 500);
+      // Poll more frequently to get real-time updates (every 1000ms to reduce server load)
+      pollInterval = setInterval(fetchLoopData, 1000);
+      
+      // Initial fetch
+      fetchLoopData();
     } else if (currentLoop?.status === 'paused' && loopId) {
       // Poll less frequently when paused
-      pollInterval = setInterval(() => {
-        loadLoop(loopId);
-      }, 2000);
+      pollInterval = setInterval(fetchLoopData, 3000);
     }
     
     return () => {
@@ -224,7 +232,7 @@ const LoopPage = () => {
         </div>
         
         {view === 'setup' ? (
-          <div className="loop-setup">
+          <div className="loop-setup loop-content-area">
             {/* Participants list with enhanced model parameters */}
             <ParticipantsList 
               loopId={currentLoop.id} 
@@ -240,13 +248,13 @@ const LoopPage = () => {
             <LoopControls loopId={currentLoop.id} />
           </div>
         ) : (
-          <div className="loop-chat">
+          <div className="loop-chat loop-content-area">
             <div className="messages-container">
               {currentLoop?.messages && currentLoop.messages.length > 0 ? (
                 <LoopMessageList 
-                  key={`message-list-${currentLoop.id}-${currentLoop.messages.length}`} 
                   messages={currentLoop.messages} 
                   participants={currentLoop.participants} 
+                  className="message-list-container"
                 />
               ) : (
                 <div className="empty-messages">
@@ -262,40 +270,39 @@ const LoopPage = () => {
                    currentLoop.status === 'paused' ? 'Loop is paused' : 'Loop is stopped'}
                 </span>
               </div>
-              <div className="loop-controls-compact">
-                {currentLoop.status === 'running' && (
-                  <button 
-                    className="compact-button pause"
-                    onClick={handlePauseLoop}
-                  >
-                    Pause
-                  </button>
-                )}
-                {currentLoop.status === 'paused' && (
-                  <button 
-                    className="compact-button resume"
-                    onClick={handleResumeLoop}
-                  >
-                    Resume
-                  </button>
-                )}
-                {(currentLoop.status === 'running' || currentLoop.status === 'paused') && (
-                  <button 
-                    className="compact-button stop"
-                    onClick={handleStopLoop}
-                  >
-                    Stop
-                  </button>
-                )}
-                {currentLoop.status === 'stopped' && currentLoop.messages && currentLoop.messages.length > 0 && (
-                  <button 
-                    className="compact-button reset"
-                    onClick={handleResetLoop}
-                  >
-                    Reset
-                  </button>
-                )}
-              </div>
+              
+              {currentLoop.status === 'running' && (
+                <button 
+                  className="compact-button pause"
+                  onClick={handlePauseLoop}
+                >
+                  Pause
+                </button>
+              )}
+              {currentLoop.status === 'paused' && (
+                <button 
+                  className="compact-button resume"
+                  onClick={handleResumeLoop}
+                >
+                  Resume
+                </button>
+              )}
+              {(currentLoop.status === 'running' || currentLoop.status === 'paused') && (
+                <button 
+                  className="compact-button stop"
+                  onClick={handleStopLoop}
+                >
+                  Stop
+                </button>
+              )}
+              {currentLoop.status === 'stopped' && currentLoop.messages && currentLoop.messages.length > 0 && (
+                <button 
+                  className="compact-button reset"
+                  onClick={handleResetLoop}
+                >
+                  Reset
+                </button>
+              )}
             </div>
           </div>
         )}
