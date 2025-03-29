@@ -68,7 +68,26 @@ def add_participant(loop_id):
     display_name = data.get('display_name')
     user_prompt = data.get('user_prompt', '')
     
-    result = loop_service.add_participant(loop_id, data['model'], system_prompt, display_name, user_prompt)
+    # Extract temperature and max_tokens with default values
+    try:
+        temperature = float(data.get('temperature', 0.7))
+    except (ValueError, TypeError):
+        temperature = 0.7
+    
+    try:
+        max_tokens = int(data.get('max_tokens', 4000))
+    except (ValueError, TypeError):
+        max_tokens = 4000
+    
+    result = loop_service.add_participant(
+        loop_id, 
+        data['model'], 
+        system_prompt, 
+        display_name, 
+        user_prompt,
+        temperature,
+        max_tokens
+    )
     
     if not result:
         return jsonify({"error": "Loop not found"}), 404
@@ -89,9 +108,22 @@ def update_participant(loop_id, participant_id):
     if not data:
         return jsonify({"error": "No data provided"}), 400
     
-    # Filter valid updates - added user_prompt to valid fields
-    valid_fields = {'model', 'system_prompt', 'display_name', 'user_prompt'}
+    # Filter valid updates - ensure temperature and max_tokens are included in valid fields
+    valid_fields = {'model', 'system_prompt', 'display_name', 'user_prompt', 'temperature', 'max_tokens'}
     updates = {k: v for k, v in data.items() if k in valid_fields}
+    
+    # Ensure numeric fields are properly converted
+    if 'temperature' in updates:
+        try:
+            updates['temperature'] = float(updates['temperature'])
+        except (ValueError, TypeError):
+            updates['temperature'] = 0.7  # Default if conversion fails
+    
+    if 'max_tokens' in updates:
+        try:
+            updates['max_tokens'] = int(updates['max_tokens'])
+        except (ValueError, TypeError):
+            updates['max_tokens'] = 4000  # Default if conversion fails
     
     result = loop_service.update_participant(loop_id, participant_id, updates)
     

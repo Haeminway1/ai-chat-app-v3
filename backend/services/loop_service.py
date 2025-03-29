@@ -6,6 +6,7 @@ import traceback
 from datetime import datetime
 from models.loop import Loop, LoopStore
 from ai_toolkit.model_manager import ModelManager
+import math
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -47,7 +48,7 @@ class LoopService:
         self.stop_loop(loop_id)
         return self.loop_store.delete_loop(loop_id)
     
-    def add_participant(self, loop_id, model, system_prompt="", display_name=None, user_prompt=""):
+    def add_participant(self, loop_id, model, system_prompt="", display_name=None, user_prompt="", temperature=0.7, max_tokens=4000):
         """Add a participant to the loop"""
         loop = self.loop_store.get_loop(loop_id)
         if not loop:
@@ -63,8 +64,10 @@ class LoopService:
         logger.info(f"System prompt: {system_prompt}")
         logger.info(f"User prompt: {user_prompt}")
         logger.info(f"Display name: {display_name or f'AI {next_order}'}")
+        logger.info(f"Temperature: {temperature}")
+        logger.info(f"Max Tokens: {max_tokens}")
         
-        participant = loop.add_participant(model, next_order, system_prompt, display_name, user_prompt)
+        participant = loop.add_participant(model, next_order, system_prompt, display_name, user_prompt, temperature, max_tokens)
         return self.loop_store.save_loop(loop), participant
     
     def update_participant(self, loop_id, participant_id, updates):
@@ -72,6 +75,29 @@ class LoopService:
         loop = self.loop_store.get_loop(loop_id)
         if not loop:
             return None
+        
+        # Validate numeric parameters
+        if 'temperature' in updates:
+            try:
+                temp = float(updates['temperature'])
+                # Ensure temperature is in valid range
+                if temp < 0 or temp > 2 or math.isnan(temp):
+                    updates['temperature'] = 0.7
+                else:
+                    updates['temperature'] = temp
+            except (ValueError, TypeError):
+                updates['temperature'] = 0.7
+        
+        if 'max_tokens' in updates:
+            try:
+                tokens = int(updates['max_tokens'])
+                # Ensure max_tokens is in valid range
+                if tokens < 100 or tokens > 8000:
+                    updates['max_tokens'] = 4000
+                else:
+                    updates['max_tokens'] = tokens
+            except (ValueError, TypeError):
+                updates['max_tokens'] = 4000
         
         # Log update info for debugging
         logger.info(f"Updating participant {participant_id} in loop {loop_id}")
@@ -400,10 +426,21 @@ class LoopService:
         current_participant_name = participant.display_name
         current_participant_id = participant.id
         
+        # Retrieve model parameters from participant
+        temperature = getattr(participant, 'temperature', 0.7)
+        max_tokens = getattr(participant, 'max_tokens', 4000)
+        
+        # Log model parameters
+        logger.info(f"Processing with model {model_type} for {current_participant_name}")
+        logger.info(f"Using temperature: {temperature}, max_tokens: {max_tokens}")
+        
         # Create a dedicated ModelManager instance for this request
         participant_model_manager = ModelManager()
         participant_model_manager._initialize_models()
         participant_model_manager.change_model(model_type)
+        
+        # Apply model parameters
+        participant_model_manager.set_parameters(temperature=temperature, max_tokens=max_tokens)
         
         # Get model config for system prompt support check
         model_config = participant_model_manager.get_model_config(model_type)

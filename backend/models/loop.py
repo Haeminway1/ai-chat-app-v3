@@ -4,13 +4,15 @@ import uuid
 from datetime import datetime
 
 class Participant:
-    def __init__(self, model, order_index, system_prompt="", display_name=None, user_prompt=""):
+    def __init__(self, model, order_index, system_prompt="", display_name=None, user_prompt="", temperature=0.7, max_tokens=4000):
         self.id = str(uuid.uuid4())
         self.model = model
         self.order_index = order_index
         self.system_prompt = system_prompt
         self.user_prompt = user_prompt
         self.display_name = display_name or f"AI {order_index}"
+        self.temperature = temperature
+        self.max_tokens = max_tokens
     
     def to_dict(self):
         return {
@@ -19,7 +21,9 @@ class Participant:
             "order_index": self.order_index,
             "system_prompt": self.system_prompt,
             "user_prompt": self.user_prompt,
-            "display_name": self.display_name
+            "display_name": self.display_name,
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens
         }
     
     @classmethod
@@ -29,7 +33,9 @@ class Participant:
             data["order_index"], 
             data.get("system_prompt", ""),
             data.get("display_name"),
-            data.get("user_prompt", "")
+            data.get("user_prompt", ""),
+            data.get("temperature", 0.7),
+            data.get("max_tokens", 4000)
         )
         participant.id = data.get("id", str(uuid.uuid4()))
         return participant
@@ -103,8 +109,8 @@ class Loop:
         self.current_turn = 0
         self.loop_user_prompt = ""  # New field for loop user prompt that receives the last participant's output
     
-    def add_participant(self, model, order_index, system_prompt="", display_name=None, user_prompt=""):
-        participant = Participant(model, order_index, system_prompt, display_name, user_prompt)
+    def add_participant(self, model, order_index, system_prompt="", display_name=None, user_prompt="", temperature=0.7, max_tokens=4000):
+        participant = Participant(model, order_index, system_prompt, display_name, user_prompt, temperature, max_tokens)
         self.participants.append(participant)
         self.updated_at = datetime.now()
         return participant

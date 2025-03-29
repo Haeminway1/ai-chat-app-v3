@@ -6,6 +6,8 @@
   margin-bottom: 24px;
   width: 100%;
   box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
 
 .start-controls {
@@ -22,6 +24,8 @@
   gap: 8px;
   width: 100%;
   box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
 
 .initial-prompt-container label {

@@ -34,6 +34,27 @@ class AIModel(ABC):
         """
         pass
     
+    def set_parameters(self, **kwargs):
+        """
+        Set model parameters like temperature and max_tokens.
+        
+        Args:
+            **kwargs: Arbitrary keyword arguments for model parameters
+            
+        Returns:
+            bool: True if parameters were set successfully
+        """
+        # Update model_config with the provided parameters
+        updated = False
+        
+        for key, value in kwargs.items():
+            if key in self.model_config:
+                self.model_config[key] = value
+                updated = True
+                logger.info(f"Updated {key} to {value} for {self.__class__.__name__}")
+        
+        return updated
+    
     def _get_env_var(self, var_name: str) -> str:
         """
         Get environment variable with validation.

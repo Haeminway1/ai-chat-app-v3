@@ -78,7 +78,10 @@ const LoopList = () => {
           </div>
           <div className="loop-meta">
             <span className="participant-count">
-              {loop.participants.length} participant{loop.participants.length !== 1 ? 's' : ''}
+              {loop.participants && loop.participants.length 
+                ? `${loop.participants.length} participant${loop.participants.length !== 1 ? 's' : ''}`
+                : '0 participants'
+              }
             </span>
             <button 
               className="delete-loop-button"

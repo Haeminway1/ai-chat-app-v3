@@ -1,23 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLoop } from '../../contexts/LoopContext';
 import StopSequence from './StopSequence';
 import { FiPlus, FiInfo } from 'react-icons/fi';
 import './StopSequencesList.css';
 
 const StopSequencesList = ({ loopId }) => {
-  const { currentLoop, addStopSequence, updateStopSequence, removeStopSequence, reorderLoopStopSequences } = useLoop();
+  const { 
+    currentLoop, 
+    addStopSequence, 
+    updateStopSequence, 
+    removeStopSequence, 
+    reorderStopSequences 
+  } = useLoop();
   const [expandedSequence, setExpandedSequence] = useState(null);
+  const [isAddingSequence, setIsAddingSequence] = useState(false);
+  
+  // Add useEffect to handle escape key for closing expanded panels
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && expandedSequence) {
+        setExpandedSequence(null);
+      }
+    };
+    
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [expandedSequence]);
 
   const handleAddStopSequence = () => {
+    if (isAddingSequence) return; // 이미 추가 중이면 중복 요청 방지
+    
+    setIsAddingSequence(true);
     const sequenceCount = currentLoop?.stop_sequences?.length || 0;
     const displayName = `Stop Sequence ${sequenceCount + 1}`;
+    
     addStopSequence(
       loopId,
       "gpt-4o", 
       "", 
       displayName,
       ""
-    );
+    ).finally(() => {
+      // 작업이 완료되면 상태 복원
+      setIsAddingSequence(false);
+    });
   };
 
   const toggleExpand = (id) => {
@@ -33,7 +59,7 @@ const StopSequencesList = ({ loopId }) => {
     newOrder[index - 1] = temp;
     
     const stopSequenceIds = newOrder.map(s => s.id);
-    reorderLoopStopSequences(loopId, stopSequenceIds);
+    reorderStopSequences(loopId, stopSequenceIds);
   };
   
   const handleMoveDown = (index) => {
@@ -45,18 +71,28 @@ const StopSequencesList = ({ loopId }) => {
     newOrder[index + 1] = temp;
     
     const stopSequenceIds = newOrder.map(s => s.id);
-    reorderLoopStopSequences(loopId, stopSequenceIds);
+    reorderStopSequences(loopId, stopSequenceIds);
   };
   
   const handleUpdateStopSequence = (stopSequenceId, updates) => {
-    updateStopSequence(loopId, stopSequenceId, updates);
+    if (!stopSequenceId || !updates) return;
+    return updateStopSequence(loopId, stopSequenceId, updates);
   };
   
   const handleRemoveStopSequence = (stopSequenceId) => {
+    if (!stopSequenceId) return;
+    
+    // 제거 후 해당 시퀀스가 확장되어 있었다면 닫기
+    if (expandedSequence === stopSequenceId) {
+      setExpandedSequence(null);
+    }
+    
     removeStopSequence(loopId, stopSequenceId);
   };
 
   if (!currentLoop) return null;
+  
+  const isEditable = currentLoop.status !== 'running' && currentLoop.status !== 'paused';
 
   return (
     <div className={`stop-sequences-list ${expandedSequence ? 'with-expanded' : ''}`}>
@@ -65,8 +101,9 @@ const StopSequencesList = ({ loopId }) => {
         <button 
           className="add-stop-sequence-button"
           onClick={handleAddStopSequence}
+          disabled={!isEditable || isAddingSequence}
         >
-          <FiPlus /> Add Stop Sequence
+          <FiPlus /> {isAddingSequence ? 'Adding...' : 'Add Stop Sequence'}
         </button>
       </div>
       
@@ -86,7 +123,7 @@ const StopSequencesList = ({ loopId }) => {
               onMoveDown={() => handleMoveDown(index)}
               isFirst={index === 0}
               isLast={index === currentLoop.stop_sequences.length - 1}
-              isEditable={currentLoop.status !== 'running' && currentLoop.status !== 'paused'}
+              isEditable={isEditable}
               totalStopSequences={currentLoop.stop_sequences.length}
             />
           ))}
@@ -97,8 +134,9 @@ const StopSequencesList = ({ loopId }) => {
           <button 
             className="add-stop-sequence-button"
             onClick={handleAddStopSequence}
+            disabled={!isEditable || isAddingSequence}
           >
-            <FiPlus /> Add Your First Stop Sequence
+            <FiPlus /> {isAddingSequence ? 'Adding...' : 'Add Your First Stop Sequence'}
           </button>
         </div>
       )}

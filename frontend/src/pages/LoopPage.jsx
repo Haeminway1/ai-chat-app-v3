@@ -36,6 +36,9 @@ const LoopPage = () => {
   const [loadTried, setLoadTried] = useState(false);
   const [view, setView] = useState('setup'); // Default to 'setup' instead of 'chat'
   
+  // Add state to track if any modals are open
+  const [isAnyModalOpen, setIsAnyModalOpen] = useState(false);
+
   // Effect to handle loop loading - only load existing loops, don't auto-create
   useEffect(() => {
     // Only handle initial navigation once
@@ -49,16 +52,24 @@ const LoopPage = () => {
             if (!result) {
               setLoadFailed(true);
             } else {
-              // If there is a saved view, use it, otherwise use setup as default
-              if (loopStateByID[loopId]?.view) {
-                setView(loopStateByID[loopId].view);
-              } else {
-                // Only switch to messages if running and has messages
-                if (result.status === 'running' && result.messages && result.messages.length > 0) {
-                  setView('chat');
+              // 루프가 로드되면 먼저 루프가 유효한지 확인
+              const isValidLoop = result.id && result.title;
+              
+              if (isValidLoop) {
+                // If there is a saved view, use it, otherwise use setup as default
+                if (loopStateByID[loopId]?.view) {
+                  setView(loopStateByID[loopId].view);
                 } else {
-                  setView('setup');
+                  // Only switch to messages if running and has messages
+                  if (result.status === 'running' && result.messages && result.messages.length > 0) {
+                    setView('chat');
+                  } else {
+                    setView('setup');
+                  }
                 }
+              } else {
+                // 유효하지 않은 루프인 경우 오류 상태로 설정
+                setLoadFailed(true);
               }
             }
           })
@@ -69,20 +80,27 @@ const LoopPage = () => {
     }
   }, [loopId, loadLoop, loadTried, currentLoop]);
 
-  // Save state when view changes
+  // Save state when view changes - 성능 최적화를 위한 디바운스 적용
   useEffect(() => {
     if (loopId && view) {
       if (!loopStateByID[loopId]) {
         loopStateByID[loopId] = {};
       }
-      loopStateByID[loopId].view = view;
+      
+      // 불필요한 업데이트 방지를 위한 추가 조건 확인
+      if (loopStateByID[loopId].view !== view) {
+        loopStateByID[loopId].view = view;
+      }
     }
   }, [loopId, view]);
 
   // Effect to automatically switch to messages view when loop is running
   useEffect(() => {
     if (currentLoop?.status === 'running' && view !== 'chat') {
-      setView('chat');
+      // 즉시 상태를 업데이트하면 깜빡거림이 발생할 수 있으므로 약간 지연
+      setTimeout(() => {
+        setView('chat');
+      }, 10);
     }
   }, [currentLoop?.status, view]);
 
@@ -116,6 +134,34 @@ const LoopPage = () => {
       }
     };
   }, [currentLoop?.status, loopId, loadLoop]);
+
+  // Update the LoopPage component to include an effect that prevents body scrolling when modals are open
+  useEffect(() => {
+    const handleModalStateChange = (e) => {
+      if (e.detail && e.detail.type === 'modal_state_changed') {
+        setIsAnyModalOpen(e.detail.isOpen);
+      }
+    };
+
+    window.addEventListener('modal_state_changed', handleModalStateChange);
+
+    return () => {
+      window.removeEventListener('modal_state_changed', handleModalStateChange);
+    };
+  }, []);
+
+  // Apply body style to prevent scrolling when modal is open
+  useEffect(() => {
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isAnyModalOpen]);
 
   // Handle creation of a new loop
   const handleCreateNewLoop = () => {

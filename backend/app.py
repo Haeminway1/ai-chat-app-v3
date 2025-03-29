@@ -2,6 +2,11 @@ from flask import Flask
 from flask_cors import CORS
 import os
 import sys
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # Add the current directory to path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -21,6 +26,17 @@ def create_app():
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
     app.config['CHAT_HISTORY_DIR'] = os.environ.get('CHAT_HISTORY_DIR', 'data/chats')
     app.config['LOOP_HISTORY_DIR'] = os.environ.get('LOOP_HISTORY_DIR', 'data/loops')
+    
+    # Performance and runtime settings
+    app.config['LOOP_REQUEST_TIMEOUT'] = int(os.environ.get('LOOP_REQUEST_TIMEOUT', 120))
+    app.config['LOOP_MAX_TOKENS'] = int(os.environ.get('LOOP_MAX_TOKENS', 8000))
+    app.config['LOOP_WORKER_THREADS'] = int(os.environ.get('LOOP_WORKER_THREADS', 4))
+    app.config['RESPONSE_CACHE_SIZE'] = int(os.environ.get('RESPONSE_CACHE_SIZE', 50))
+    
+    logger.info(f"Runtime settings: " + 
+                f"REQUEST_TIMEOUT={app.config['LOOP_REQUEST_TIMEOUT']}, " +
+                f"MAX_TOKENS={app.config['LOOP_MAX_TOKENS']}, " +
+                f"WORKER_THREADS={app.config['LOOP_WORKER_THREADS']}")
     
     # Enable CORS with proper configuration
     CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -50,4 +66,10 @@ def create_app():
 if __name__ == "__main__":
     app = create_app()
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    # 운영 환경에서는 디버그 모드 비활성화
+    debug_mode = os.environ.get('FLASK_DEBUG', '0') == '1'
+    # 스레드 설정 - 루프와 채팅을 위한 충분한 스레드
+    threaded = True
+    
+    logger.info(f"Starting Flask app on port {port} (debug={debug_mode}, threaded={threaded})")
+    app.run(host='0.0.0.0', port=port, debug=debug_mode, threaded=threaded)

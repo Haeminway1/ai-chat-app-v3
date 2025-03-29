@@ -372,32 +372,90 @@ class ModelManager:
     
     def get_parameters(self, provider: str, model: str) -> Dict[str, Any]:
         """
-        Get parameters for a specific model
+        Get parameters for the given model and provider.
         
         Args:
             provider (str): Provider name
             model (str): Model name
-                
+            
         Returns:
             Dict[str, Any]: Model parameters
         """
-        # If model is a key in our config, use that directly
-        if model in self.config.get('models', {}):
-            model_config = self.config.get('models', {}).get(model, {})
-            return {
-                'model': model_config.get('model', ''),
-                'max_tokens': model_config.get('max_tokens', 4000),
-                'temperature': model_config.get('temperature', 0.7),
-                'supports_system_prompt': model_config.get('supports_system_prompt', True)
-            }
-        
-        # Otherwise, provide default params
+        # Lookup in model configuration
+        models_config = self.config.get('models', {})
+        for model_key, model_data in models_config.items():
+            if model_data.get('provider') == provider and model_data.get('model') == model:
+                parameters = {
+                    'model': model,
+                    'temperature': model_data.get('temperature', 0.7),
+                    'max_tokens': model_data.get('max_tokens', 4000)
+                }
+                
+                # Add provider-specific parameters
+                if provider == 'google' and 'safety_settings' in model_data:
+                    parameters['safety_settings'] = model_data['safety_settings']
+                
+                # Add reasoning effort if available (used for o3-mini)
+                if 'reasoning_effort' in model_data:
+                    parameters['reasoning_effort'] = model_data['reasoning_effort']
+                    
+                # Add reasoning if available (used for gemini)
+                if 'system_message' in model_data:
+                    parameters['system_message'] = model_data['system_message']
+                    
+                return parameters
+                
+        # Return default parameters if not found
         return {
             'model': model,
-            'max_tokens': 4000,
             'temperature': 0.7,
-            'supports_system_prompt': True
+            'max_tokens': 4000
         }
+    
+    def set_parameters(self, temperature=None, max_tokens=None):
+        """
+        Set model parameters like temperature and max_tokens for the current model.
+        
+        Args:
+            temperature (float, optional): Temperature for text generation
+            max_tokens (int, optional): Maximum tokens for generation
+            
+        Returns:
+            bool: True if parameters were set successfully
+        """
+        if not self.current_model:
+            logger.warning("Cannot set parameters: No current model is selected")
+            return False
+            
+        # Get current model details
+        model_type = self.config.get('current_model')
+        model_config = self.config.get('models', {}).get(model_type, {})
+        
+        # Update model configuration with new parameters
+        if temperature is not None:
+            model_config['temperature'] = float(temperature)
+            
+        if max_tokens is not None:
+            model_config['max_tokens'] = int(max_tokens)
+            
+        # Set the parameters directly on the model instance if available
+        if hasattr(self.current_model, 'set_parameters'):
+            try:
+                model_params = {}
+                if temperature is not None:
+                    model_params['temperature'] = float(temperature)
+                if max_tokens is not None:
+                    model_params['max_tokens'] = int(max_tokens)
+                    
+                self.current_model.set_parameters(**model_params)
+            except Exception as e:
+                logger.error(f"Error setting parameters on model: {e}")
+                return False
+                
+        # Update the configuration
+        self.config['models'][model_type] = model_config
+        
+        return True
 
     def _prepare_json_template(self, model_type: str) -> Dict:
         """

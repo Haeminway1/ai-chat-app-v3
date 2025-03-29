@@ -110,6 +110,12 @@ def run_backend():
         env_vars = os.environ.copy()
         env_vars["FLASK_DEBUG"] = "0"  # 디버그 모드 비활성화
         
+        # 루프 작동 관련 환경 변수 설정
+        env_vars["LOOP_REQUEST_TIMEOUT"] = "120"     # 루프 요청 타임아웃 설정 (seconds)
+        env_vars["LOOP_MAX_TOKENS"] = "8000"         # 루프 최대 토큰 수
+        env_vars["LOOP_WORKER_THREADS"] = "4"        # 루프 작업자 스레드 수
+        env_vars["RESPONSE_CACHE_SIZE"] = "50"       # 응답 캐시 크기
+        
         # Flask 앱 실행 명령
         backend_cmd = [python_executable, 'app.py']
         

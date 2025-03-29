@@ -20,29 +20,48 @@ export const deleteLoop = (loopId) => {
   return api.delete(`/loop/${loopId}`);
 };
 
-export const addParticipant = (loopId, model, systemPrompt = '', displayName = null, userPrompt = '') => {
+export const addParticipant = (loopId, model, systemPrompt = '', displayName = null, userPrompt = '', temperature = 0.7, maxTokens = 4000) => {
   return api.post(`/loop/${loopId}/participant`, { 
     model, 
     system_prompt: systemPrompt,
     user_prompt: userPrompt,
-    display_name: displayName
+    display_name: displayName,
+    temperature: parseFloat(temperature) || 0.7,
+    max_tokens: parseInt(maxTokens) || 4000
   });
 };
 
 export const updateParticipant = (loopId, participantId, updates) => {
-  // Ensure proper field names for backend
+  // Ensure proper field names for backend and data types
   const apiData = {
-    ...updates,
-    // Map any frontend names to backend names 
-    model: updates.model,
-    system_prompt: updates.system_prompt,
-    user_prompt: updates.user_prompt,
-    display_name: updates.display_name,
-    max_tokens: updates.max_tokens,
-    temperature: updates.temperature
+    // Explicitly include all required fields
+    model: updates.model || 'gpt-4o',
+    system_prompt: updates.system_prompt || '',
+    user_prompt: updates.user_prompt || '',
+    display_name: updates.display_name || '',
+    max_tokens: parseInt(updates.max_tokens) || 4000,
+    temperature: parseFloat(updates.temperature) || 0.7
   };
   
-  console.log(`API call to update participant ${participantId} in loop ${loopId}:`, apiData);
+  // Make sure user_prompt is included in the request
+  if (updates.user_prompt === undefined && updates.user_prompt !== '') {
+    console.warn("user_prompt missing from update, setting to empty string", updates);
+  }
+  
+  // Validate numeric values to ensure they're in reasonable ranges
+  if (apiData.temperature < 0 || isNaN(apiData.temperature)) apiData.temperature = 0.7;
+  if (apiData.temperature > 2) apiData.temperature = 2.0;
+  
+  if (apiData.max_tokens < 100 || isNaN(apiData.max_tokens)) apiData.max_tokens = 4000;
+  if (apiData.max_tokens > 8000) apiData.max_tokens = 8000;
+  
+  // 요청 데이터를 명확하게 로깅
+  console.log(`API call to update participant ${participantId} in loop ${loopId}:`, { 
+    endpoint: `/loop/${loopId}/participant/${participantId}`,
+    method: 'PUT',
+    data: apiData
+  });
+  
   return api.put(`/loop/${loopId}/participant/${participantId}`, apiData);
 };
 
