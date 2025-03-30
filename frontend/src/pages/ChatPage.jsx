@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useChat } from '../contexts/ChatContext';
 import { useModel } from '../contexts/ModelContext';
@@ -20,7 +20,7 @@ const ChatPage = () => {
     currentChat, 
     loadChat, 
     createNewChat, 
-    updateChatName,
+    updateChatTitle,
     updateSystemMessage,
     loading,
     isTyping 
@@ -130,7 +130,7 @@ const ChatPage = () => {
 
   const handleUpdateChatTitle = async (newTitle) => {
     if (currentChat) {
-      await updateChatName(currentChat.id, newTitle);
+      await updateChatTitle(currentChat.id, newTitle);
     }
   };
 
