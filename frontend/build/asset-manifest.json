@@ -1,0 +1,14 @@
+{
+  "files": {
+    "main.css": "/static/css/main.69c67a77.css",
+    "main.js": "/static/js/main.1ec06877.js",
+    "static/media/blackmyth-bg.jpg": "/static/media/blackmyth-bg.3de0a8ec3bfd40fe3ce7.jpg",
+    "index.html": "/index.html",
+    "main.69c67a77.css.map": "/static/css/main.69c67a77.css.map",
+    "main.1ec06877.js.map": "/static/js/main.1ec06877.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.69c67a77.css",
+    "static/js/main.1ec06877.js"
+  ]
+}

@@ -6,6 +6,11 @@ const MessageList = ({ messages, isTyping }) => {
   const messagesEndRef = useRef(null);
   const messageListRef = useRef(null);
 
+  // 콘솔에 메시지 데이터를 로깅하여 디버깅
+  useEffect(() => {
+    console.log("MessageList rendering with messages:", messages);
+  }, [messages]);
+
   // 더 강력한 스크롤 처리를 위한 함수
   const scrollToBottom = () => {
     // 1. messagesEndRef를 사용한 스크롤
@@ -29,16 +34,25 @@ const MessageList = ({ messages, isTyping }) => {
   useEffect(() => {
     scrollToBottom();
     
-    // 약간의 지연 후 다시 스크롤
-    const timer = setTimeout(() => {
+    // 약간의 지연 후 다시 스크롤 - 여러 번 시도하여 확실하게 스크롤 처리
+    const timer1 = setTimeout(() => {
       scrollToBottom();
     }, 100);
     
-    return () => clearTimeout(timer);
+    const timer2 = setTimeout(() => {
+      scrollToBottom();
+    }, 300);
+    
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
   }, [messages, isTyping]);
 
   // 시스템 메시지를 제외한 메시지만 표시
-  const filteredMessages = messages.filter(message => message.role !== 'system');
+  const filteredMessages = Array.isArray(messages) 
+    ? messages.filter(message => message.role !== 'system')
+    : [];
 
   if (!filteredMessages || filteredMessages.length === 0) {
     return (
@@ -52,7 +66,7 @@ const MessageList = ({ messages, isTyping }) => {
     <div className="message-list" ref={messageListRef}>
       {filteredMessages.map((message, index) => (
         <div 
-          key={message.id || index}
+          key={message.id || `msg-${index}`}
           className={`message message-${message.role}`}
         >
           <div className="message-header">
@@ -63,7 +77,7 @@ const MessageList = ({ messages, isTyping }) => {
             {message.content}
           </div>
           <div className="message-timestamp">
-            {new Date(message.timestamp).toLocaleTimeString()}
+            {message.timestamp ? new Date(message.timestamp).toLocaleTimeString() : 'Just now'}
           </div>
         </div>
       ))}

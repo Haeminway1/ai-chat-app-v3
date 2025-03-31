@@ -86,6 +86,14 @@ const ChatPage = () => {
 
   // Scroll handling for new messages
   useEffect(() => {
+    // Validate messages data
+    if (!currentChat?.messages || !Array.isArray(currentChat.messages)) {
+      console.error("Invalid messages data:", currentChat?.messages);
+      return;
+    }
+    
+    console.log(`ChatPage: Message update detected, count: ${currentChat.messages.length}`);
+    
     const scrollDown = () => {
       if (messagesContainerRef.current) {
         messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
@@ -103,6 +111,11 @@ const ChatPage = () => {
 
   // 컴포넌트가 마운트될 때와 메시지가 업데이트될 때 스크롤 처리
   useLayoutEffect(() => {
+    // Validate messages data
+    if (!currentChat?.messages || !Array.isArray(currentChat.messages)) {
+      return;
+    }
+    
     if (messagesContainerRef.current && currentChat?.messages?.length > 0) {
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
     }

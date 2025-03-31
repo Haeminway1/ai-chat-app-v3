@@ -156,15 +156,27 @@ export const ChatProvider = ({ children }) => {
     setIsTyping(true); // Set typing to true when sending
     try {
       const result = await sendMessage(chatId, content);
+      
+      // 서버 응답 로깅 추가
+      console.log("Server response for message:", result);
+      
       if (result.status === "success") {
-        setCurrentChat(result.chat);
-        
-        // Update chat in the list
-        if (chatsLoaded) {
-          setChats(prevChats => 
-            prevChats.map(chat => chat.id === chatId ? result.chat : chat)
-          );
+        // 응답 체크를 명시적으로 수행
+        if (result.chat && Array.isArray(result.chat.messages)) {
+          // Update chat with server response
+          setCurrentChat(result.chat);
+          
+          // Update chat in the list
+          if (chatsLoaded) {
+            setChats(prevChats => 
+              prevChats.map(chat => chat.id === chatId ? result.chat : chat)
+            );
+          }
+        } else {
+          console.error("Invalid chat data in response:", result);
         }
+      } else if (result.error) {
+        console.error("Error in chat response:", result.error);
       }
       return result;
     } catch (error) {

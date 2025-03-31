@@ -40,16 +40,31 @@ def add_message(chat_id):
     data = request.json
     
     if not data or 'content' not in data:
-        return jsonify({"error": "No message content provided"}), 400
+        return jsonify({"error": "No message content provided", "status": "error"}), 400
     
     chat = chat_service.get_chat(chat_id)
     
     if not chat:
-        return jsonify({"error": "Chat not found"}), 404
+        return jsonify({"error": "Chat not found", "status": "error"}), 404
     
-    result = chat_service.add_message_and_get_response(chat_id, data['content'])
-    
-    return jsonify(result)
+    try:
+        result = chat_service.add_message_and_get_response(chat_id, data['content'])
+        
+        # Ensure we have proper JSON structure
+        if isinstance(result, dict) and result.get("chat") and not result.get("error"):
+            result["status"] = "success"
+            return jsonify(result)
+        else:
+            # Add error status if missing
+            if isinstance(result, dict) and "error" in result:
+                result["status"] = "error"
+            else:
+                result = {"error": "Unknown error in generating response", "status": "error"}
+            
+            return jsonify(result), 500
+    except Exception as e:
+        print(f"Error processing message: {str(e)}")
+        return jsonify({"error": str(e), "status": "error"}), 500
 
 @chat_bp.route('/<chat_id>/system', methods=['POST'])
 def update_system_message(chat_id):

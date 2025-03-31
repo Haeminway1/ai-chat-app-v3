@@ -1,5 +1,5 @@
 current_img_model: gpt-4o
-current_model: gemini-2.5-pro-exp-03-25
+current_model: gpt-4o
 json_mode: false
 models:
   claude-3-5-haiku-latest:

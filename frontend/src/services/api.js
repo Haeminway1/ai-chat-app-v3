@@ -47,9 +47,21 @@ async function request(endpoint, options = {}) {
       throw new Error(errorData.error || `Request failed with status ${response.status}`);
     }
     
-    const data = await response.json();
-    console.log(`API Response from ${url} (${requestTime}ms):`, data);
-    return data;
+    // 클론해서 응답 데이터를 두 번 읽을 수 있도록 합니다
+    const responseClone = response.clone();
+    
+    try {
+      const data = await response.json();
+      console.log(`API Response from ${url} (${requestTime}ms):`, data);
+      return data;
+    } catch (parseError) {
+      console.error(`Error parsing JSON from ${url}:`, parseError);
+      // JSON 파싱 실패 시 텍스트로 읽어봅니다
+      const textContent = await responseClone.text();
+      console.log(`Response as text (${textContent.length} chars):`, 
+        textContent.length > 100 ? textContent.substring(0, 100) + '...' : textContent);
+      throw new Error(`Failed to parse response as JSON: ${parseError.message}`);
+    }
   } catch (error) {
     // 네트워크 오류나 타임아웃의 경우 더 명확한 로깅
     if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
