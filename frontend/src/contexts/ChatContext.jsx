@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import { 
   createChat,
   listChats,
@@ -23,6 +23,16 @@ export const ChatProvider = ({ children }) => {
   const [isTyping, setIsTyping] = useState(false);
   const [chatsLoaded, setChatsLoaded] = useState(false);
   const [lastLoadedChatId, setLastLoadedChatId] = useState(null);
+  const [pendingMessageId, setPendingMessageId] = useState(null);
+  const pollingRef = useRef(null);
+
+  // Clear any active polling
+  const clearPolling = () => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  };
 
   // Memoize loadChats to avoid dependency issues
   const loadChats = useCallback(async (force = false) => {
@@ -44,13 +54,14 @@ export const ChatProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [chatsLoaded]); // Remove chats from dependencies to prevent unnecessary re-renders
+  }, [chatsLoaded]);
 
-  const loadChat = useCallback(async (chatId) => {
+  const loadChat = useCallback(async (chatId, forceRefresh = false) => {
     if (!chatId) return null;
     
     // If current chat is already loaded and matches the requested id, return it
-    if (currentChat && currentChat.id === chatId && lastLoadedChatId === chatId) {
+    // Unless forceRefresh is true
+    if (!forceRefresh && currentChat && currentChat.id === chatId && lastLoadedChatId === chatId) {
       return currentChat;
     }
     
@@ -72,6 +83,13 @@ export const ChatProvider = ({ children }) => {
             setChats(prevChats => [chat, ...prevChats]);
           }
         }
+        
+        // If this was a force refresh, stop any pending typing indicator
+        if (forceRefresh) {
+          setIsTyping(false);
+          setSending(false);
+          clearPolling();
+        }
       }
       return chat;
     } catch (error) {
@@ -80,7 +98,7 @@ export const ChatProvider = ({ children }) => {
     } finally {
       setLoadingChat(false);
     }
-  }, [currentChat, lastLoadedChatId, chats, chatsLoaded]);
+  }, [currentChat, lastLoadedChatId, chats, chatsLoaded, clearPolling]);
 
   const createNewChat = async (title, provider, model, parameters) => {
     setLoading(true);
@@ -147,21 +165,122 @@ export const ChatProvider = ({ children }) => {
     return tempId; // Return this in case it's needed
   };
 
-  const sendChatMessage = async (chatId, content) => {
+  // Helper to check if a message is an error message
+  const isErrorMessage = (content) => {
+    if (!content) return false;
+    return content.startsWith('Error generating content:') || 
+           content.startsWith('Error:') || 
+           (typeof content === 'string' && content.includes('error'));
+  };
+
+  // Helper to remove error messages when retrying
+  const removeErrorMessages = (chatId) => {
+    if (!currentChat || currentChat.id !== chatId) return;
+    
+    // Find the last error message and remove it along with any subsequent messages
+    const messages = [...currentChat.messages];
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const message = messages[i];
+      
+      if (message.role === 'assistant' && isErrorMessage(message.content)) {
+        // Remove this message and any messages that came after it
+        const updatedMessages = messages.slice(0, i);
+        
+        // Update current chat with the filtered messages
+        const updatedChat = {
+          ...currentChat,
+          messages: updatedMessages
+        };
+        
+        setCurrentChat(updatedChat);
+        
+        // Also update in the chats list
+        if (chatsLoaded) {
+          setChats(prevChats => 
+            prevChats.map(chat => chat.id === chatId ? updatedChat : chat)
+          );
+        }
+        
+        break;
+      }
+    }
+  };
+
+  // Poll for chat updates when a response is taking a long time
+  const startPollingForResponse = useCallback((chatId) => {
+    // Clear any existing polling
+    clearPolling();
+    
+    // Set a polling interval of 3 seconds
+    pollingRef.current = setInterval(async () => {
+      try {
+        console.log("Polling for chat updates...");
+        const updatedChat = await getChat(chatId);
+        
+        if (updatedChat) {
+          // Check if the last message is from the assistant and different from our current chat
+          const lastMessage = updatedChat.messages[updatedChat.messages.length - 1];
+          
+          if (lastMessage && lastMessage.role === 'assistant') {
+            // Found a response, update the UI
+            setCurrentChat(updatedChat);
+            
+            // Update chat in the list
+            if (chatsLoaded) {
+              setChats(prevChats => 
+                prevChats.map(chat => chat.id === chatId ? updatedChat : chat)
+              );
+            }
+            
+            // Clear polling and reset states
+            clearPolling();
+            setIsTyping(false);
+            setSending(false);
+            setPendingMessageId(null);
+          }
+        }
+      } catch (error) {
+        console.error("Error polling for chat updates:", error);
+      }
+    }, 3000);
+    
+    // Set a timeout to eventually stop polling after 5 minutes
+    setTimeout(() => {
+      if (pollingRef.current) {
+        clearPolling();
+        setIsTyping(false);
+        setSending(false);
+        console.log("Polling timeout reached");
+      }
+    }, 5 * 60 * 1000);
+  }, [chatsLoaded]);
+  
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => clearPolling();
+  }, []);
+
+  const sendChatMessage = async (chatId, content, isRetry = false) => {
+    // When retrying, first remove the error messages
+    if (isRetry) {
+      removeErrorMessages(chatId);
+    }
+    
     // First add the message locally for immediate display
-    addLocalMessage(chatId, content);
+    if (!isRetry) {
+      addLocalMessage(chatId, content);
+    }
     
     // Then send to the server
     setSending(true);
-    setIsTyping(true); // Set typing to true when sending
+    setIsTyping(true);
+    
     try {
       const result = await sendMessage(chatId, content);
       
-      // 서버 응답 로깅 추가
       console.log("Server response for message:", result);
       
       if (result.status === "success") {
-        // 응답 체크를 명시적으로 수행
         if (result.chat && Array.isArray(result.chat.messages)) {
           // Update chat with server response
           setCurrentChat(result.chat);
@@ -172,19 +291,37 @@ export const ChatProvider = ({ children }) => {
               prevChats.map(chat => chat.id === chatId ? result.chat : chat)
             );
           }
+          
+          // Reset states
+          setSending(false);
+          setIsTyping(false);
+          setPendingMessageId(null);
+          clearPolling();
         } else {
           console.error("Invalid chat data in response:", result);
+          
+          // Response didn't include complete chat data, start polling
+          setPendingMessageId(Date.now().toString());
+          startPollingForResponse(chatId);
         }
       } else if (result.error) {
         console.error("Error in chat response:", result.error);
+        setSending(false);
+        setIsTyping(false);
+      } else {
+        // No status or incomplete response, start polling
+        setPendingMessageId(Date.now().toString());
+        startPollingForResponse(chatId);
       }
       return result;
     } catch (error) {
       console.error('Failed to send message:', error);
+      
+      // Network error or timeout, start polling
+      setPendingMessageId(Date.now().toString());
+      startPollingForResponse(chatId);
+      
       return { error: 'Failed to send message' };
-    } finally {
-      setSending(false);
-      setIsTyping(false); // Set typing to false when done
     }
   };
   
@@ -272,6 +409,7 @@ export const ChatProvider = ({ children }) => {
     isTyping,
     chatsLoaded,
     lastLoadedChatId,
+    pendingMessageId,
     loadChats,
     loadChat,
     createNewChat,

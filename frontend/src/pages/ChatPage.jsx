@@ -23,7 +23,8 @@ const ChatPage = () => {
     updateChatTitle,
     updateSystemMessage,
     loading,
-    isTyping 
+    isTyping,
+    sending 
   } = useChat();
   
   const { modelConfigs } = useModel();
@@ -84,61 +85,25 @@ const ChatPage = () => {
     }
   }, [chatId, currentChat, scrollToBottom]);
 
-  // Scroll handling for new messages
+  // Always scroll to bottom when new messages arrive, if we're already near the bottom
   useEffect(() => {
-    // Validate messages data
-    if (!currentChat?.messages || !Array.isArray(currentChat.messages)) {
-      console.error("Invalid messages data:", currentChat?.messages);
-      return;
+    if (isNearBottom) {
+      scrollToBottom();
     }
-    
-    console.log(`ChatPage: Message update detected, count: ${currentChat.messages.length}`);
-    
-    const scrollDown = () => {
-      if (messagesContainerRef.current) {
-        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
-      }
-    };
-    
-    if (currentChat?.messages?.length > 0) {
-      scrollDown();
-      // 약간의 지연 후 한번 더 시도
-      setTimeout(() => {
-        scrollDown();
-      }, 200);
-    }
-  }, [currentChat?.messages?.length]);
+  }, [currentChat?.messages?.length, isNearBottom, scrollToBottom]);
 
-  // 컴포넌트가 마운트될 때와 메시지가 업데이트될 때 스크롤 처리
-  useLayoutEffect(() => {
-    // Validate messages data
-    if (!currentChat?.messages || !Array.isArray(currentChat.messages)) {
-      return;
-    }
-    
-    if (messagesContainerRef.current && currentChat?.messages?.length > 0) {
-      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
-    }
-  }, [currentChat?.messages]);
-
-  // 약간의 지연 후 한번 더 스크롤 처리 (DOM이 완전히 렌더링된 후)
+  // Scroll to bottom when sending is complete, if we're in typing state
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (messagesContainerRef.current && currentChat?.messages?.length > 0) {
-        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
-      }
-    }, 200);
-    
-    return () => clearTimeout(timer);
-  }, [currentChat?.messages]);
+    if (!sending && isTyping) {
+      scrollToBottom();
+    }
+  }, [sending, isTyping, scrollToBottom]);
 
-  // Handle creation of a new chat
-  const handleCreateNewChat = () => {
-    createNewChat("New Chat").then(newChat => {
-      if (newChat) {
-        navigate(`/chat/${newChat.id}`, { replace: true });
-      }
-    });
+  const handleCreateNewChat = async () => {
+    const newChat = await createNewChat("New Chat");
+    if (newChat) {
+      navigate(`/chat/${newChat.id}`, { replace: true });
+    }
   };
 
   const handleUpdateChatTitle = async (newTitle) => {

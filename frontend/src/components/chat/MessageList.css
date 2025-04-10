@@ -44,6 +44,86 @@
   margin-left: 0.5rem;
 }
 
+/* Error message styling */
+.message-error {
+  background-color: var(--message-assistant);
+  border: 1px solid #ef4444;
+}
+
+.message-error .message-content {
+  color: #b91c1c;
+}
+
+.error-actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.retry-button {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.retry-button:hover {
+  background-color: #dc2626;
+}
+
+/* Message list actions */
+.message-list-actions {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
+  width: 100%;
+}
+
+.refresh-button {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.7rem 1.2rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.refresh-button:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme='blackmyth'] .message-error {
+  border: 1px solid #b91c1c;
+}
+
+[data-theme='blackmyth'] .retry-button {
+  background-color: #7f1d1d;
+  color: #f1e9d9;
+}
+
+[data-theme='blackmyth'] .retry-button:hover {
+  background-color: #991b1b;
+}
+
+[data-theme='blackmyth'] .refresh-button {
+  background-color: #B28045;
+  color: #f1e9d9;
+  border: 1px solid rgba(77, 66, 49, 0.3);
+}
+
+[data-theme='blackmyth'] .refresh-button:hover {
+  background-color: #C99961;
+}
+
 [data-theme='blackmyth'] .message-header {
   color: #B28045;
 }

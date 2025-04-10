@@ -4,12 +4,15 @@ import './TypingIndicator.css';
 const TypingIndicator = () => {
   return (
     <div className="typing-indicator">
-      <div className="typing-indicator-bubble">
-        <div className="typing-indicator-dot"></div>
-        <div className="typing-indicator-dot"></div>
-        <div className="typing-indicator-dot"></div>
+      <div className="typing-container">
+        <div className="typing-header">AI</div>
+        <div className="typing-animation">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div className="typing-text">Writing response...</div>
       </div>
-      <div className="typing-indicator-text">AI is thinking...</div>
     </div>
   );
 };
